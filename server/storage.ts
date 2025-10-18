@@ -11,8 +11,15 @@ import {
   type InsertArquivoMidia,
   type UserWithoutPassword,
   StatusCaderno,
-  Perfil,
+  Selo,
+  users,
+  cadernos,
+  esps,
+  arquivosMidia,
+  logsAtividade,
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -46,42 +53,32 @@ export interface IStorage {
   getLogs(userId?: string): Promise<LogAtividade[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private cadernos: Map<string, Caderno>;
-  private esps: Map<string, Esp>;
-  private arquivosMidia: Map<string, ArquivoMidia>;
-  private logs: Map<string, LogAtividade>;
-
-  constructor() {
-    this.users = new Map();
-    this.cadernos = new Map();
-    this.esps = new Map();
-    this.arquivosMidia = new Map();
-    this.logs = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = {
-      ...insertUser,
+    const now = new Date();
+    const values = {
       id,
-      ativo: true,
-      createdAt: new Date(),
+      nome: insertUser.nome,
+      email: insertUser.email,
+      hashSenha: insertUser.hashSenha,
+      perfil: insertUser.perfil,
+      ativo: insertUser.ativo ?? true,
+      createdAt: now,
     };
-    this.users.set(id, user);
-    return user;
+    await db.insert(users).values(values);
+    return values;
   }
 
   async getUserWithoutPassword(id: string): Promise<UserWithoutPassword | undefined> {
@@ -93,138 +90,184 @@ export class MemStorage implements IStorage {
 
   // Caderno methods
   async getCaderno(id: string): Promise<Caderno | undefined> {
-    return this.cadernos.get(id);
+    const result = await db.select().from(cadernos).where(eq(cadernos.id, id)).limit(1);
+    return result[0];
   }
 
   async getCadernos(filters?: { status?: StatusCaderno; autorId?: string }): Promise<Caderno[]> {
-    let cadernos = Array.from(this.cadernos.values());
+    const conditions = [];
     if (filters?.status) {
-      cadernos = cadernos.filter(c => c.status === filters.status);
+      conditions.push(eq(cadernos.status, filters.status));
     }
     if (filters?.autorId) {
-      cadernos = cadernos.filter(c => c.autorId === filters.autorId);
+      conditions.push(eq(cadernos.autorId, filters.autorId));
     }
-    return cadernos;
+    
+    if (conditions.length > 0) {
+      return await db.select().from(cadernos).where(and(...conditions));
+    }
+    return await db.select().from(cadernos);
   }
 
   async createCaderno(insertCaderno: InsertCaderno): Promise<Caderno> {
     const id = randomUUID();
     const now = new Date();
-    const caderno: Caderno = {
-      ...insertCaderno,
+    const values = {
       id,
-      status: insertCaderno.status || StatusCaderno.EM_ANDAMENTO,
+      titulo: insertCaderno.titulo,
+      descricao: insertCaderno.descricao ?? null,
+      status: insertCaderno.status ?? StatusCaderno.EM_ANDAMENTO,
+      autorId: insertCaderno.autorId,
       createdAt: now,
       updatedAt: now,
     };
-    this.cadernos.set(id, caderno);
-    return caderno;
+    await db.insert(cadernos).values(values);
+    return values;
   }
 
   async updateCaderno(id: string, updates: Partial<InsertCaderno>): Promise<Caderno | undefined> {
-    const caderno = this.cadernos.get(id);
-    if (!caderno) return undefined;
+    const updateData: any = { updatedAt: new Date() };
+    if (updates.titulo !== undefined) updateData.titulo = updates.titulo;
+    if (updates.descricao !== undefined) updateData.descricao = updates.descricao;
+    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.autorId !== undefined) updateData.autorId = updates.autorId;
     
-    const updated: Caderno = {
-      ...caderno,
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.cadernos.set(id, updated);
-    return updated;
+    await db.update(cadernos).set(updateData).where(eq(cadernos.id, id));
+    return this.getCaderno(id);
   }
 
   async deleteCaderno(id: string): Promise<boolean> {
-    return this.cadernos.delete(id);
+    const result = await db.delete(cadernos).where(eq(cadernos.id, id)).returning({ id: cadernos.id });
+    return result.length > 0;
   }
 
   // ESP methods
   async getEsp(id: string): Promise<Esp | undefined> {
-    return this.esps.get(id);
+    const result = await db.select().from(esps).where(eq(esps.id, id)).limit(1);
+    return result[0];
   }
 
   async getEsps(filters?: { cadernoId?: string; visivel?: boolean }): Promise<Esp[]> {
-    let esps = Array.from(this.esps.values());
+    const conditions = [];
     if (filters?.cadernoId) {
-      esps = esps.filter(e => e.cadernoId === filters.cadernoId);
+      conditions.push(eq(esps.cadernoId, filters.cadernoId));
     }
     if (filters?.visivel !== undefined) {
-      esps = esps.filter(e => e.visivel === filters.visivel);
+      conditions.push(eq(esps.visivel, filters.visivel));
     }
-    return esps;
+    
+    if (conditions.length > 0) {
+      return await db.select().from(esps).where(and(...conditions));
+    }
+    return await db.select().from(esps);
   }
 
   async createEsp(insertEsp: InsertEsp): Promise<Esp> {
     const id = randomUUID();
     const now = new Date();
-    const esp: Esp = {
-      ...insertEsp,
+    const values = {
       id,
+      codigo: insertEsp.codigo,
+      titulo: insertEsp.titulo,
+      tipologia: insertEsp.tipologia,
+      revisao: insertEsp.revisao,
+      dataPublicacao: insertEsp.dataPublicacao,
+      autorId: insertEsp.autorId,
+      selo: insertEsp.selo ?? Selo.NENHUM,
+      cadernoId: insertEsp.cadernoId,
+      visivel: insertEsp.visivel ?? true,
+      descricaoAplicacao: insertEsp.descricaoAplicacao ?? null,
+      execucao: insertEsp.execucao ?? null,
+      fichasReferencia: insertEsp.fichasReferencia ?? null,
+      recebimento: insertEsp.recebimento ?? null,
+      servicosIncluidos: insertEsp.servicosIncluidos ?? null,
+      criteriosMedicao: insertEsp.criteriosMedicao ?? null,
+      legislacao: insertEsp.legislacao ?? null,
+      referencias: insertEsp.referencias ?? null,
       createdAt: now,
       updatedAt: now,
     };
-    this.esps.set(id, esp);
-    return esp;
+    await db.insert(esps).values(values);
+    return values;
   }
 
   async updateEsp(id: string, updates: Partial<InsertEsp>): Promise<Esp | undefined> {
-    const esp = this.esps.get(id);
-    if (!esp) return undefined;
+    const updateData: any = { updatedAt: new Date() };
+    if (updates.codigo !== undefined) updateData.codigo = updates.codigo;
+    if (updates.titulo !== undefined) updateData.titulo = updates.titulo;
+    if (updates.tipologia !== undefined) updateData.tipologia = updates.tipologia;
+    if (updates.revisao !== undefined) updateData.revisao = updates.revisao;
+    if (updates.dataPublicacao !== undefined) updateData.dataPublicacao = updates.dataPublicacao;
+    if (updates.autorId !== undefined) updateData.autorId = updates.autorId;
+    if (updates.selo !== undefined) updateData.selo = updates.selo;
+    if (updates.cadernoId !== undefined) updateData.cadernoId = updates.cadernoId;
+    if (updates.visivel !== undefined) updateData.visivel = updates.visivel;
+    if (updates.descricaoAplicacao !== undefined) updateData.descricaoAplicacao = updates.descricaoAplicacao;
+    if (updates.execucao !== undefined) updateData.execucao = updates.execucao;
+    if (updates.fichasReferencia !== undefined) updateData.fichasReferencia = updates.fichasReferencia;
+    if (updates.recebimento !== undefined) updateData.recebimento = updates.recebimento;
+    if (updates.servicosIncluidos !== undefined) updateData.servicosIncluidos = updates.servicosIncluidos;
+    if (updates.criteriosMedicao !== undefined) updateData.criteriosMedicao = updates.criteriosMedicao;
+    if (updates.legislacao !== undefined) updateData.legislacao = updates.legislacao;
+    if (updates.referencias !== undefined) updateData.referencias = updates.referencias;
     
-    const updated: Esp = {
-      ...esp,
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.esps.set(id, updated);
-    return updated;
+    await db.update(esps).set(updateData).where(eq(esps.id, id));
+    return this.getEsp(id);
   }
 
   async deleteEsp(id: string): Promise<boolean> {
-    return this.esps.delete(id);
+    const result = await db.delete(esps).where(eq(esps.id, id)).returning({ id: esps.id });
+    return result.length > 0;
   }
 
   // ArquivoMidia methods
   async getArquivosMidiaByEsp(espId: string): Promise<ArquivoMidia[]> {
-    return Array.from(this.arquivosMidia.values()).filter(
-      arquivo => arquivo.espId === espId
-    );
+    return await db.select().from(arquivosMidia).where(eq(arquivosMidia.espId, espId));
   }
 
   async createArquivoMidia(insertArquivo: InsertArquivoMidia): Promise<ArquivoMidia> {
     const id = randomUUID();
-    const arquivo: ArquivoMidia = {
-      ...insertArquivo,
+    const now = new Date();
+    const values = {
       id,
-      createdAt: new Date(),
+      espId: insertArquivo.espId,
+      tipo: insertArquivo.tipo,
+      filename: insertArquivo.filename,
+      contentType: insertArquivo.contentType,
+      fileIdMongo: insertArquivo.fileIdMongo,
+      createdAt: now,
     };
-    this.arquivosMidia.set(id, arquivo);
-    return arquivo;
+    await db.insert(arquivosMidia).values(values);
+    return values;
   }
 
   async deleteArquivoMidia(id: string): Promise<boolean> {
-    return this.arquivosMidia.delete(id);
+    const result = await db.delete(arquivosMidia).where(eq(arquivosMidia.id, id)).returning({ id: arquivosMidia.id });
+    return result.length > 0;
   }
 
   // LogAtividade methods
   async createLog(insertLog: InsertLogAtividade): Promise<LogAtividade> {
     const id = randomUUID();
-    const log: LogAtividade = {
-      ...insertLog,
+    const now = new Date();
+    const values = {
       id,
-      createdAt: new Date(),
+      userId: insertLog.userId,
+      acao: insertLog.acao,
+      alvo: insertLog.alvo,
+      detalhes: insertLog.detalhes ?? null,
+      createdAt: now,
     };
-    this.logs.set(id, log);
-    return log;
+    await db.insert(logsAtividade).values(values);
+    return values;
   }
 
   async getLogs(userId?: string): Promise<LogAtividade[]> {
-    const allLogs = Array.from(this.logs.values());
     if (userId) {
-      return allLogs.filter(log => log.userId === userId);
+      return await db.select().from(logsAtividade).where(eq(logsAtividade.userId, userId));
     }
-    return allLogs;
+    return await db.select().from(logsAtividade);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

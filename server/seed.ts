@@ -60,48 +60,67 @@ export async function seedDatabase() {
       throw new Error("Arquiteto user not found");
     }
 
-    // Create 1 Caderno
-    const caderno = await storage.createCaderno({
-      titulo: "Caderno de Especificações - Edificações 2025",
-      descricao: "Caderno principal para especificações de edificações escolares",
-      status: StatusCaderno.EM_ANDAMENTO,
-      autorId: arquiteto.id,
-    });
-    logger.info(`Caderno created: ${caderno.id}`);
+    // Create 1 Caderno (check if exists first)
+    const allCadernos = await storage.getCadernos();
+    let caderno = allCadernos.find(c => c.titulo === "Caderno de Especificações - Edificações 2025");
+    
+    if (!caderno) {
+      caderno = await storage.createCaderno({
+        titulo: "Caderno de Especificações - Edificações 2025",
+        descricao: "Caderno principal para especificações de edificações escolares",
+        status: StatusCaderno.EM_ANDAMENTO,
+        autorId: arquiteto.id,
+      });
+      logger.info(`Caderno created: ${caderno.id}`);
+    } else {
+      logger.info(`Caderno already exists: ${caderno.id}`);
+    }
 
-    // Create 2 ESPs
-    const esp1 = await storage.createEsp({
-      codigo: "ESP-001",
-      titulo: "Especificação de Pintura Interna",
-      tipologia: "Acabamento",
-      revisao: "v1.0",
-      dataPublicacao: new Date("2025-01-15"),
-      autorId: arquiteto.id,
-      selo: Selo.AMBIENTAL,
-      cadernoId: caderno.id,
-      visivel: true,
-      descricaoAplicacao: "Pintura interna para ambientes escolares, utilizando tintas de baixo VOC.",
-      execucao: "1. Preparação da superfície\n2. Aplicação de fundo\n3. Duas demãos de tinta látex",
-      fichasReferencia: "NBR 15079:2011 - Tintas para edificações",
-      criteriosMedicao: "Medição por m² de área pintada",
-    });
-    logger.info(`ESP created: ${esp1.codigo}`);
+    // Create 2 ESPs (check if exists first)
+    const allEsps = await storage.getEsps({ cadernoId: caderno.id });
+    
+    let esp1 = allEsps.find(e => e.codigo === "ESP-001");
+    if (!esp1) {
+      esp1 = await storage.createEsp({
+        codigo: "ESP-001",
+        titulo: "Especificação de Pintura Interna",
+        tipologia: "Acabamento",
+        revisao: "v1.0",
+        dataPublicacao: new Date("2025-01-15"),
+        autorId: arquiteto.id,
+        selo: Selo.AMBIENTAL,
+        cadernoId: caderno.id,
+        visivel: true,
+        descricaoAplicacao: "Pintura interna para ambientes escolares, utilizando tintas de baixo VOC.",
+        execucao: "1. Preparação da superfície\n2. Aplicação de fundo\n3. Duas demãos de tinta látex",
+        fichasReferencia: "NBR 15079:2011 - Tintas para edificações",
+        criteriosMedicao: "Medição por m² de área pintada",
+      });
+      logger.info(`ESP created: ${esp1.codigo}`);
+    } else {
+      logger.info(`ESP already exists: ${esp1.codigo}`);
+    }
 
-    const esp2 = await storage.createEsp({
-      codigo: "ESP-002",
-      titulo: "Especificação de Alvenaria de Vedação",
-      tipologia: "Estrutura",
-      revisao: "v1.0",
-      dataPublicacao: new Date("2025-01-20"),
-      autorId: arquiteto.id,
-      selo: Selo.NENHUM,
-      cadernoId: caderno.id,
-      visivel: true,
-      descricaoAplicacao: "Alvenaria de vedação em blocos cerâmicos para divisão de ambientes.",
-      execucao: "1. Marcação da alvenaria\n2. Assentamento dos blocos\n3. Fixação nas estruturas",
-      legislacao: "Lei Distrital nº 5.920/2017 - Código de Edificações do DF",
-    });
-    logger.info(`ESP created: ${esp2.codigo}`);
+    let esp2 = allEsps.find(e => e.codigo === "ESP-002");
+    if (!esp2) {
+      esp2 = await storage.createEsp({
+        codigo: "ESP-002",
+        titulo: "Especificação de Alvenaria de Vedação",
+        tipologia: "Estrutura",
+        revisao: "v1.0",
+        dataPublicacao: new Date("2025-01-20"),
+        autorId: arquiteto.id,
+        selo: Selo.NENHUM,
+        cadernoId: caderno.id,
+        visivel: true,
+        descricaoAplicacao: "Alvenaria de vedação em blocos cerâmicos para divisão de ambientes.",
+        execucao: "1. Marcação da alvenaria\n2. Assentamento dos blocos\n3. Fixação nas estruturas",
+        legislacao: "Lei Distrital nº 5.920/2017 - Código de Edificações do DF",
+      });
+      logger.info(`ESP created: ${esp2.codigo}`);
+    } else {
+      logger.info(`ESP already exists: ${esp2.codigo}`);
+    }
 
     // Create activity logs
     await storage.createLog({
