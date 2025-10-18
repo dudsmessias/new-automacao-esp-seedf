@@ -34,23 +34,28 @@ export function authenticateToken(
   res: Response,
   next: NextFunction
 ) {
-  console.log("🔍 Auth Debug - All cookies:", req.cookies);
-  console.log("🔍 Auth Debug - Headers:", req.headers.cookie);
+  // Check Authorization header first (preferred method)
+  const authHeader = req.headers.authorization;
+  let token: string | undefined;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.substring(7);
+  }
   
-  const token = req.cookies?.esp_session;
+  // Fallback to cookie if no Authorization header
+  if (!token) {
+    token = req.cookies?.esp_session;
+  }
 
   if (!token) {
-    console.log("❌ No token found in cookies");
     return res.status(401).json({ error: "Não autenticado" });
   }
 
   const user = verifyToken(token);
   if (!user) {
-    console.log("❌ Invalid token");
     return res.status(401).json({ error: "Token inválido" });
   }
 
-  console.log("✅ User authenticated:", user.email);
   req.user = user;
   next();
 }

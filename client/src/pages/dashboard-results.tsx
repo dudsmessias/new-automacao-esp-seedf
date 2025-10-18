@@ -63,15 +63,19 @@ export default function DashboardResults() {
 
   const handleLogout = async () => {
     try {
+      const token = localStorage.getItem("esp_auth_token");
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       localStorage.removeItem("esp_auth_user");
+      localStorage.removeItem("esp_auth_token");
       setLocation("/login");
     } catch (error) {
       console.error("Logout error:", error);
       localStorage.removeItem("esp_auth_user");
+      localStorage.removeItem("esp_auth_token");
       setLocation("/login");
     }
   };

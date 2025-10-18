@@ -20,17 +20,26 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     // Always verify with backend (don't trust localStorage alone)
     try {
-      console.log("🔍 Checking auth... Cookies:", document.cookie);
+      const token = localStorage.getItem("esp_auth_token");
+      
+      if (!token) {
+        clearAuthUser();
+        setAuthState("redirecting");
+        setTimeout(() => setLocation("/login"), 100);
+        return;
+      }
+
       const response = await fetch("/api/auth/me", {
         credentials: "include",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
       });
-
-      console.log("📡 Auth check response:", response.status);
 
       if (response.status === 401 || response.status === 403) {
         // Unauthorized - clear session and redirect
-        console.log("❌ Unauthorized - redirecting to login");
         clearAuthUser();
+        localStorage.removeItem("esp_auth_token");
         setAuthState("redirecting");
         setTimeout(() => setLocation("/login"), 100);
         return;

@@ -34,7 +34,6 @@ export default function Login() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      console.log("🔐 Attempting login...");
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,25 +44,22 @@ export default function Login() {
         }),
       });
 
-      console.log("📡 Login response status:", response.status);
-      console.log("📡 Response headers:", Object.fromEntries(response.headers.entries()));
-      console.log("🍪 All cookies after login:", document.cookie);
-
       const result = await response.json();
 
       if (!response.ok) {
         throw new Error(result.error || "Credenciais inválidas");
       }
 
-      // Save user to localStorage
+      // Save user and token to localStorage
       if (result.user) {
         localStorage.setItem("esp_auth_user", JSON.stringify(result.user));
       }
+      if (result.token) {
+        localStorage.setItem("esp_auth_token", result.token);
+      }
 
-      console.log("✅ Login successful, redirecting to /loading");
       setLocation("/loading");
     } catch (error: any) {
-      console.error("❌ Login error:", error);
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",

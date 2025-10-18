@@ -18,6 +18,7 @@ export function getAuthUser(): UserWithoutPassword | null {
 
 export function clearAuthUser() {
   localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem("esp_auth_token");
 }
 
 export function isAuthenticated(): boolean {

@@ -75,23 +75,13 @@ router.post("/login", validateBody(loginSchema), async (req, res) => {
     const { hashSenha: _, ...userWithoutPassword } = user;
     const token = generateToken(userWithoutPassword);
 
-    console.log("🍪 Setting cookie esp_session with token (length):", token.length);
-    console.log("🍪 Environment:", process.env.NODE_ENV);
-    
-    res.cookie("esp_session", token, {
-      httpOnly: true,
-      secure: false, // Always false for development/testing
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: "/",
-    });
-
-    console.log("✅ Cookie set successfully. Response headers:", res.getHeaders()["set-cookie"]);
     logger.info("User logged in", { userId: user.id, email: user.email });
 
+    // Return token in response body for localStorage storage
     res.json({
       message: "Login realizado com sucesso",
       user: userWithoutPassword,
+      token, // Send token to frontend
     });
   } catch (error) {
     logger.error("Login error", { error });
