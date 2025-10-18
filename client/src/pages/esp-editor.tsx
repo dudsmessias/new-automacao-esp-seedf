@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { useRoute, Link } from "wouter";
+import { useState, useEffect } from "react";
+import { useRoute, Link, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { AuthHeader } from "@/components/AuthHeader";
 import { InstitutionalButton } from "@/components/InstitutionalButton";
 import { UploadDropzone } from "@/components/UploadDropzone";
@@ -7,20 +11,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, RefreshCw, FileText, CalendarIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Save, FileText, CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Selo } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getAuthUser } from "@/lib/auth";
 
 const tabs = [
   { id: "identificacao", label: "Identificação" },
-  { id: "projetos", label: "Projetos" },
+  { id: "projetos", label: "Projetos Vinculados" },
   { id: "descricao", label: "Descrição e Aplicação" },
   { id: "execucao", label: "Execução" },
   { id: "fichas", label: "Fichas de Referência" },
@@ -28,18 +34,126 @@ const tabs = [
   { id: "servicos", label: "Serviços Incluídos" },
   { id: "criterios", label: "Critérios de Medição" },
   { id: "legislacao", label: "Legislação e Referências" },
-  { id: "visualizar-pdf", label: "Visualização de PDF" },
-  { id: "exportar-pdf", label: "Exportar PDF" },
+  { id: "anexos", label: "Anexos" },
+  { id: "visualizar-pdf", label: "Visualizar PDF" },
+  { id: "exportar", label: "Exportar" },
 ];
 
+const espFormSchema = z.object({
+  codigo: z.string().min(1, "Código é obrigatório"),
+  titulo: z.string().min(1, "Título é obrigatório"),
+  tipologia: z.string().min(1, "Tipologia é obrigatória"),
+  revisao: z.string().min(1, "Revisão é obrigatória"),
+  dataPublicacao: z.date({ required_error: "Data de publicação é obrigatória" }),
+  selo: z.nativeEnum(Selo),
+  visivel: z.boolean(),
+  descricaoAplicacao: z.string().optional(),
+  execucao: z.string().optional(),
+  fichasReferencia: z.string().optional(),
+  recebimento: z.string().optional(),
+  servicosIncluidos: z.string().optional(),
+  criteriosMedicao: z.string().optional(),
+  legislacao: z.string().optional(),
+  referencias: z.string().optional(),
+});
+
+type EspFormData = z.infer<typeof espFormSchema>;
+
 export default function EspEditor() {
-  const [, params] = useRoute("/esp/:id/*?");
-  const [activeTab, setActiveTab] = useState("identificacao");
-  const [dataPublicacao, setDataPublicacao] = useState<Date>();
-  const [visivel, setVisivel] = useState(true);
-  
+  const [, params] = useRoute("/esp/:id/:tab?");
+  const espId = params?.id;
+  const urlTab = params?.tab || "identificacao";
+  const [activeTab, setActiveTab] = useState(urlTab);
   const [, setLocation] = useLocation();
-  const user = JSON.parse(localStorage.getItem("esp_auth_user") || "{}");
+  const { toast } = useToast();
+  const user = getAuthUser();
+
+  // Sync active tab with URL
+  useEffect(() => {
+    setActiveTab(urlTab);
+  }, [urlTab]);
+
+  // Fetch ESP data
+  const { data: esp, isLoading, error } = useQuery({
+    queryKey: ["/api/esp", espId],
+    queryFn: async () => {
+      const response = await fetch(`/api/esp/${espId}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Erro ao carregar ESP");
+      return response.json();
+    },
+    enabled: !!espId,
+  });
+
+  // Form setup
+  const form = useForm<EspFormData>({
+    resolver: zodResolver(espFormSchema),
+    defaultValues: {
+      codigo: "",
+      titulo: "",
+      tipologia: "",
+      revisao: "",
+      selo: Selo.NENHUM,
+      visivel: true,
+      descricaoAplicacao: "",
+      execucao: "",
+      fichasReferencia: "",
+      recebimento: "",
+      servicosIncluidos: "",
+      criteriosMedicao: "",
+      legislacao: "",
+      referencias: "",
+    },
+  });
+
+  // Update form when ESP data loads
+  useEffect(() => {
+    if (esp) {
+      form.reset({
+        codigo: esp.codigo || "",
+        titulo: esp.titulo || "",
+        tipologia: esp.tipologia || "",
+        revisao: esp.revisao || "",
+        dataPublicacao: esp.dataPublicacao ? new Date(esp.dataPublicacao) : undefined,
+        selo: esp.selo || Selo.NENHUM,
+        visivel: esp.visivel ?? true,
+        descricaoAplicacao: esp.descricaoAplicacao || "",
+        execucao: esp.execucao || "",
+        fichasReferencia: esp.fichasReferencia || "",
+        recebimento: esp.recebimento || "",
+        servicosIncluidos: esp.servicosIncluidos || "",
+        criteriosMedicao: esp.criteriosMedicao || "",
+        legislacao: esp.legislacao || "",
+        referencias: esp.referencias || "",
+      });
+    }
+  }, [esp, form]);
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async (data: EspFormData) => {
+      return await apiRequest(`/api/esp/${espId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/esp", espId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/esp"] });
+      toast({
+        title: "ESP atualizada",
+        description: "As alterações foram salvas com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Erro ao atualizar ESP",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleLogout = async () => {
     try {
@@ -57,22 +171,80 @@ export default function EspEditor() {
   };
 
   const handleSave = () => {
-    console.log("Save ESP");
-  };
-
-  const handleUpdate = () => {
-    console.log("Update ESP");
+    form.handleSubmit((data) => {
+      updateMutation.mutate(data);
+    })();
   };
 
   const handleFilesSelected = (files: File[]) => {
     console.log("Files selected:", files);
+    toast({
+      title: "Arquivos selecionados",
+      description: `${files.length} arquivo(s) selecionado(s). Upload será implementado em breve.`,
+    });
   };
+
+  const handleExportPDF = async () => {
+    try {
+      const response = await fetch(`/api/export/pdf/${espId}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (!response.ok) throw new Error("Erro ao exportar PDF");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${esp?.codigo || "ESP"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "PDF exportado",
+        description: "O arquivo foi baixado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao exportar",
+        description: "Não foi possível exportar o PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto text-institutional-blue" />
+          <p className="text-muted-foreground">Carregando ESP...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-destructive">Erro ao carregar ESP</p>
+          <Link href="/dashboard">
+            <Button variant="outline">Voltar para Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <AuthHeader
-        userName={user.nome}
-        userRole={user.perfil}
+        userName={user?.nome || ""}
+        userRole={user?.perfil || ""}
         onLogout={handleLogout}
       />
       
@@ -94,7 +266,10 @@ export default function EspEditor() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setLocation(`/esp/${espId}/${tab.id}`);
+                }}
                 className={cn(
                   "w-full text-left px-4 py-2 rounded-md text-sm transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-institutional-yellow",
@@ -126,26 +301,29 @@ export default function EspEditor() {
                       data-testid="input-tipologia"
                       className="mt-1"
                       placeholder="Ex: Edificação"
+                      {...form.register("tipologia")}
                     />
+                    {form.formState.errors.tipologia && (
+                      <p className="text-sm text-destructive mt-1">
+                        {form.formState.errors.tipologia.message}
+                      </p>
+                    )}
                   </div>
                   
                   <div>
-                    <Label htmlFor="id-componente">ID do componente</Label>
-                    <Input
-                      id="id-componente"
-                      data-testid="input-id-componente"
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="codigo">Código da listagem</Label>
+                    <Label htmlFor="codigo">Código da ESP</Label>
                     <Input
                       id="codigo"
                       data-testid="input-codigo"
                       className="mt-1"
                       placeholder="ESP-XXX"
+                      {...form.register("codigo")}
                     />
+                    {form.formState.errors.codigo && (
+                      <p className="text-sm text-destructive mt-1">
+                        {form.formState.errors.codigo.message}
+                      </p>
+                    )}
                   </div>
                   
                   <div>
@@ -155,7 +333,13 @@ export default function EspEditor() {
                       data-testid="input-revisao"
                       className="mt-1"
                       placeholder="v1.0"
+                      {...form.register("revisao")}
                     />
+                    {form.formState.errors.revisao && (
+                      <p className="text-sm text-destructive mt-1">
+                        {form.formState.errors.revisao.message}
+                      </p>
+                    )}
                   </div>
                   
                   <div>
@@ -167,24 +351,29 @@ export default function EspEditor() {
                           variant="outline"
                           className={cn(
                             "w-full mt-1 justify-start text-left font-normal",
-                            !dataPublicacao && "text-muted-foreground"
+                            !form.watch("dataPublicacao") && "text-muted-foreground"
                           )}
                           data-testid="button-date-publicacao"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {dataPublicacao ? format(dataPublicacao, "PPP", { locale: ptBR }) : "Selecione"}
+                          {form.watch("dataPublicacao") ? format(form.watch("dataPublicacao"), "PPP", { locale: ptBR }) : "Selecione"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
-                          selected={dataPublicacao}
-                          onSelect={setDataPublicacao}
+                          selected={form.watch("dataPublicacao")}
+                          onSelect={(date) => form.setValue("dataPublicacao", date as Date)}
                           initialFocus
                           locale={ptBR}
                         />
                       </PopoverContent>
                     </Popover>
+                    {form.formState.errors.dataPublicacao && (
+                      <p className="text-sm text-destructive mt-1">
+                        {form.formState.errors.dataPublicacao.message}
+                      </p>
+                    )}
                   </div>
                   
                   <div>
@@ -193,14 +382,17 @@ export default function EspEditor() {
                       id="autor"
                       data-testid="input-autor"
                       className="mt-1"
-                      value={user.nome}
+                      value={user?.nome || ""}
                       disabled
                     />
                   </div>
                   
                   <div>
                     <Label htmlFor="selo">Selo</Label>
-                    <Select>
+                    <Select
+                      value={form.watch("selo")}
+                      onValueChange={(value) => form.setValue("selo", value as Selo)}
+                    >
                       <SelectTrigger
                         id="selo"
                         className="mt-1"
@@ -218,8 +410,8 @@ export default function EspEditor() {
                   <div className="flex items-center gap-3">
                     <Switch
                       id="visivel"
-                      checked={visivel}
-                      onCheckedChange={setVisivel}
+                      checked={form.watch("visivel")}
+                      onCheckedChange={(checked) => form.setValue("visivel", checked)}
                       data-testid="switch-visivel"
                     />
                     <Label htmlFor="visivel" className="cursor-pointer">
@@ -235,18 +427,27 @@ export default function EspEditor() {
                     data-testid="input-titulo"
                     className="mt-1"
                     placeholder="Título da ESP"
+                    {...form.register("titulo")}
                   />
+                  {form.formState.errors.titulo && (
+                    <p className="text-sm text-destructive mt-1">
+                      {form.formState.errors.titulo.message}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
 
             {activeTab === "projetos" && (
               <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Projetos</h1>
+                <h1 className="text-2xl font-bold">Projetos Vinculados</h1>
                 <p className="text-muted-foreground">
-                  Faça upload de arquivos de projeto (imagens, PDF, DOCX)
+                  Documentação e arquivos de projetos relacionados a esta especificação
                 </p>
-                <UploadDropzone onFilesSelected={handleFilesSelected} />
+                <div className="border rounded-lg p-8 text-center text-muted-foreground">
+                  <p>Lista de projetos vinculados será exibida aqui</p>
+                  <p className="text-sm mt-2">Recurso em desenvolvimento</p>
+                </div>
               </div>
             )}
 
@@ -260,6 +461,7 @@ export default function EspEditor() {
                     data-testid="textarea-descricao"
                     className="mt-1 min-h-[300px]"
                     placeholder="Descreva a aplicação da especificação..."
+                    {...form.register("descricaoAplicacao")}
                   />
                 </div>
               </div>
@@ -275,6 +477,7 @@ export default function EspEditor() {
                     data-testid="textarea-execucao"
                     className="mt-1 min-h-[300px]"
                     placeholder="Descreva os procedimentos de execução..."
+                    {...form.register("execucao")}
                   />
                 </div>
               </div>
@@ -290,6 +493,7 @@ export default function EspEditor() {
                     data-testid="textarea-fichas"
                     className="mt-1 min-h-[300px]"
                     placeholder="Adicione as fichas de referência..."
+                    {...form.register("fichasReferencia")}
                   />
                 </div>
               </div>
@@ -305,6 +509,7 @@ export default function EspEditor() {
                     data-testid="textarea-recebimento"
                     className="mt-1 min-h-[300px]"
                     placeholder="Descreva os critérios de recebimento..."
+                    {...form.register("recebimento")}
                   />
                 </div>
               </div>
@@ -320,6 +525,7 @@ export default function EspEditor() {
                     data-testid="textarea-servicos"
                     className="mt-1 min-h-[300px]"
                     placeholder="Liste os serviços incluídos..."
+                    {...form.register("servicosIncluidos")}
                   />
                 </div>
               </div>
@@ -335,6 +541,7 @@ export default function EspEditor() {
                     data-testid="textarea-criterios"
                     className="mt-1 min-h-[300px]"
                     placeholder="Descreva os critérios de medição..."
+                    {...form.register("criteriosMedicao")}
                   />
                 </div>
               </div>
@@ -350,6 +557,7 @@ export default function EspEditor() {
                     data-testid="textarea-legislacao"
                     className="mt-1 min-h-[200px]"
                     placeholder="Legislação aplicável..."
+                    {...form.register("legislacao")}
                   />
                 </div>
                 <div>
@@ -359,35 +567,71 @@ export default function EspEditor() {
                     data-testid="textarea-referencias"
                     className="mt-1 min-h-[200px]"
                     placeholder="Referências bibliográficas..."
+                    {...form.register("referencias")}
                   />
+                </div>
+              </div>
+            )}
+
+            {activeTab === "anexos" && (
+              <div className="max-w-4xl space-y-6">
+                <h1 className="text-2xl font-bold">Anexos</h1>
+                <p className="text-muted-foreground">
+                  Faça upload de arquivos anexos (imagens, PDF, DOCX)
+                </p>
+                <UploadDropzone onFilesSelected={handleFilesSelected} />
+                <div className="mt-6">
+                  <h2 className="text-lg font-semibold mb-3">Arquivos anexados</h2>
+                  <div className="border rounded-lg p-4 text-center text-muted-foreground">
+                    <p>Nenhum arquivo anexado ainda</p>
+                  </div>
                 </div>
               </div>
             )}
 
             {activeTab === "visualizar-pdf" && (
               <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Visualização de PDF</h1>
+                <h1 className="text-2xl font-bold">Visualizar PDF</h1>
                 <div className="border rounded-lg p-8 text-center text-muted-foreground">
                   <FileText className="h-16 w-16 mx-auto mb-4" />
                   <p>Pré-visualização do PDF será exibida aqui</p>
+                  <p className="text-sm mt-2">Recurso em desenvolvimento</p>
                 </div>
               </div>
             )}
 
-            {activeTab === "exportar-pdf" && (
+            {activeTab === "exportar" && (
               <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Exportar PDF</h1>
-                <div className="border rounded-lg p-8 text-center space-y-4">
-                  <FileText className="h-16 w-16 mx-auto text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Exporte a ESP como arquivo PDF
-                  </p>
-                  <InstitutionalButton
-                    variant="primary"
-                    data-testid="button-export-pdf"
-                  >
-                    Exportar PDF
-                  </InstitutionalButton>
+                <h1 className="text-2xl font-bold">Exportar</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="border rounded-lg p-8 text-center space-y-4">
+                    <FileText className="h-16 w-16 mx-auto text-muted-foreground" />
+                    <h3 className="font-semibold">Exportar como PDF</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Gere um documento PDF formatado
+                    </p>
+                    <InstitutionalButton
+                      variant="primary"
+                      onClick={handleExportPDF}
+                      data-testid="button-export-pdf"
+                    >
+                      Exportar PDF
+                    </InstitutionalButton>
+                  </div>
+                  
+                  <div className="border rounded-lg p-8 text-center space-y-4">
+                    <FileText className="h-16 w-16 mx-auto text-muted-foreground" />
+                    <h3 className="font-semibold">Exportar como DOCX</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Gere um documento Word editável
+                    </p>
+                    <InstitutionalButton
+                      variant="primary"
+                      data-testid="button-export-docx"
+                    >
+                      Exportar DOCX
+                    </InstitutionalButton>
+                  </div>
                 </div>
               </div>
             )}
@@ -399,25 +643,21 @@ export default function EspEditor() {
               <InstitutionalButton
                 variant="secondary"
                 onClick={handleSave}
+                disabled={updateMutation.isPending}
                 className="gap-2"
                 data-testid="button-save"
               >
-                <Save className="h-4 w-4" />
-                Salvar
-              </InstitutionalButton>
-              
-              <InstitutionalButton
-                variant="secondary"
-                onClick={handleUpdate}
-                className="gap-2"
-                data-testid="button-update"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Atualizar
+                {updateMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {updateMutation.isPending ? "Salvando..." : "Salvar"}
               </InstitutionalButton>
               
               <InstitutionalButton
                 variant="primary"
+                onClick={handleExportPDF}
                 className="gap-2"
                 data-testid="button-open-pdf"
               >
