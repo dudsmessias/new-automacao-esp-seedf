@@ -175,6 +175,30 @@ Diretor:
 - ✅ Estados de loading apropriados
 - ℹ️ Nota: Filtros aplicados em memória após fetch (aceitável para MVP, otimizar para SQL depois)
 
+#### Task 3: Sistema de Upload de Arquivos ✅ COMPLETA
+- ✅ **Database Schema**: Migrado de MongoDB/GridFS para PostgreSQL com base64 encoding
+  - Adicionado `file_size` (integer) - tamanho em bytes
+  - Adicionado `file_data` (text) - conteúdo base64-encoded
+  - Removido `file_id_mongo` (não mais necessário)
+- ✅ **Backend Routes** (server/routes/files.ts):
+  - POST /api/files/upload - Upload via FormData multipart com Multer
+  - GET /api/files/:espId/files - Lista arquivos de uma ESP (sem fileData para performance)
+  - GET /api/files/:id/download - Download de arquivo (conversão base64 → buffer)
+  - GET /api/files/:id/stream - Streaming para preview
+  - DELETE /api/files/:id - Exclusão com RBAC
+- ✅ **Storage Layer**: Métodos `getArquivoMidiaById()` e `createArquivoMidia()` atualizados
+- ✅ **Frontend Integration** (ESP Editor - Aba Anexos):
+  - UploadDropzone com drag & drop ou clique
+  - Upload progress indicator
+  - Lista de arquivos com nome, tipo, tamanho
+  - Botões de download e delete
+  - TanStack Query auto-refresh após upload/delete
+- ✅ **RBAC**: Upload e Delete requerem `Permissions.createEsp` (ARQUITETO)
+- ✅ **Activity Logging**: UPLOAD_ARQUIVO e DELETE_ARQUIVO registrados
+- ✅ **Bug Fix**: Corrigido queryKey mismatch que impedia auto-refresh
+- ✅ **Testes E2E**: Upload, download, delete com auto-refresh validados
+- ⚠️ **Nota**: Arquivos armazenados como base64 em PostgreSQL (aceitável para MVP, considerar estratégia de arquivamento para arquivos grandes)
+
 #### Task 5: PDF e DOCX Export ✅ COMPLETA
 - ✅ **PDF Service** (pdfkit): Documento formatado com header institucional azul, todas as seções ESP, footer com timestamp
 - ✅ **DOCX Service** (docx): Documento Word editável com mesma estrutura do PDF
@@ -190,11 +214,11 @@ Diretor:
 
 ### 🔄 Próximas Prioridades
 
-- [ ] Task 3: Sistema de upload de arquivos com persistência real
-- [ ] Task 7: RBAC enforcement (middleware + frontend checks)
+- [ ] Task 7: RBAC enforcement completo (middleware + frontend checks)
 - [ ] Task 8: Password recovery flow
 - [ ] Otimização: Mover filtros do dashboard para SQL queries
 - [ ] Melhoria: Esconder botão DOCX export para não-DIRETOR (UX)
+- [ ] Melhoria: Esconder controles de upload/delete para não-ARQUITETO (UX)
 
 ## Tecnologias e Bibliotecas
 
@@ -217,7 +241,8 @@ Diretor:
 - TypeScript ✅
 - Drizzle ORM ✅ (migrado de Prisma)
 - PostgreSQL (Neon) ✅
-- MongoDB + GridFS (pendente - task 3)
+- File Storage: PostgreSQL com base64 encoding ✅ (task 3)
+- Multer (file upload) ✅ (task 3)
 - JWT + bcrypt ✅
 - Zod (validation) ✅
 - Winston (logging) ✅
