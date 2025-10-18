@@ -1,0 +1,191 @@
+Você é um gerador de projeto full-stack. Crie um MVP funcional, rodando localmente no Replit, para o “Sistema de Automação do Caderno de Especificações (ESP) da SEEDF”, com frontend Next.js 14+ (App Router) + TypeScript + Tailwind e backend Node.js + Express + TypeScript. Use Prisma com SQLite no desenvolvimento e preparado para PostgreSQL em produção, e MongoDB (GridFS) para binários (imagens, PDFs, DOCX).
+
+NOME DO PROJETO
+seedf-esp-mvp
+
+ARQUITETURA DE PASTAS
+/
+  frontend/  → Next.js 14, App Router, TS, Tailwind
+  server/    → Express, TS, Prisma (SQLite dev), MongoDB (GridFS)
+  server/prisma/ → schema.prisma, migrations
+  server/src/
+    routes/       → auth.ts, esp.ts, cadernos.ts, files.ts, export.ts, logs.ts
+    middleware/   → auth.ts, rbac.ts, validate.ts
+    services/     → espService.ts, fileService.ts, exportService.ts, pdfService.ts, docxService.ts
+    mongo/        → connection.ts, gridfs.ts
+    utils/        → logger.ts, errors.ts
+    tests/        → vitest + supertest
+  .env.example
+  README.md
+
+TECNOLOGIAS E BIBLIOTECAS (instale e configure)
+Frontend:
+- next, react, react-dom, typescript
+- tailwindcss, postcss, autoprefixer
+- zod, react-hook-form
+- @radix-ui/react-dialog, @radix-ui/react-tabs
+- lucide-react
+- sonner (ou react-hot-toast)
+- react-quill (modo simples)
+- @react-pdf-viewer/core e @react-pdf-viewer/default-layout
+- vitest, @testing-library/react, eslint, prettier
+(Conforme Tabela Completa de Tecnologias e Ferramentas. Configure exatamente como listado.) :contentReference[oaicite:0]{index=0}
+
+Backend:
+- express, typescript, ts-node-dev
+- prisma, @prisma/client, sqlite3
+- mongodb, multer, gridfs-stream
+- jsonwebtoken, bcrypt, cookie-parser, cors
+- zod
+- winston
+- pdfkit e docx (npm)
+- swagger-ui-express, yamljs
+- vitest, supertest, dotenv, concurrently, eslint, prettier, husky
+(Conforme resumo de stack e pacotes recomendados.) :contentReference[oaicite:1]{index=1}
+
+SCRIPTS NPM RAIZ
+{
+  "scripts": {
+    "dev:web": "cd frontend && next dev -p 3000",
+    "dev:api": "cd server && ts-node-dev --respawn src/index.ts",
+    "dev": "concurrently \"npm:dev:web\" \"npm:dev:api\"",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "vitest"
+  }
+}
+
+VARIÁVEIS DE AMBIENTE (.env.example)
+# Server
+PORT=4000
+JWT_SECRET=devsecret
+COOKIE_NAME=esp_session
+# Prisma (SQLite dev)
+DATABASE_URL="file:./dev.db"
+# Mongo
+MONGO_URI="mongodb://127.0.0.1:27017/seedf"
+MONGO_DB="seedf"
+MONGO_BUCKET="files"
+
+BACKEND — PRISMA (schema.prisma com SQLite dev e Postgres pronto)
+- Modelos mínimos:
+  User { id, nome, email, hashSenha, perfil [ARQUITETO | CHEFE_DE_NUCLEO | GERENTE | DIRETOR], ativo, createdAt }
+  Caderno { id, titulo, descricao?, status [OBSOLETO | EM_ANDAMENTO | APROVADO], autorId->User, createdAt, updatedAt }
+  ESP { id, codigo, titulo, tipologia, revisao, dataPublicacao, autorId->User, selo [AMBIENTAL | NENHUM], cadernoId->Caderno, visivel, createdAt, updatedAt }
+  Versao { id, espId->ESP, numero, createdAt }
+  ArquivoMidia { id, espId->ESP, tipo [IMAGEM | PDF | DOCX], filename, contentType, fileIdMongo, createdAt }
+  LogAtividade { id, userId->User, acao, alvo, detalhes, createdAt }
+
+- Relacionamentos consistentes. Campo ArquivoMidia.fileIdMongo referencia o _id do GridFS correspondente. :contentReference[oaicite:2]{index=2}
+
+BACKEND — MONGODB GRIDFS
+- Conectar via driver oficial.
+- Implementar upload com Multer, salvar em GridFSBucket (bucket = MONGO_BUCKET).
+- Endpoints para upload, download e streaming.
+- Guardar metadados no Prisma.ArquivoMidia.
+
+BACKEND — AUTENTICAÇÃO E SEGURANÇA
+- Registro, login, logout.
+- JWT assinado + cookie httpOnly com sameSite=lax.
+- bcrypt para hash de senha.
+- Middleware RBAC por perfil (ARQUITETO, CHEFE_DE_NUCLEO, GERENTE, DIRETOR).
+- Zod para validar body, query e params.
+- CORS permitido apenas para http://localhost:3000.
+
+BACKEND — ENDPOINTS PRINCIPAIS (com Swagger)
+- POST /auth/register, POST /auth/login, POST /auth/logout, GET /auth/me
+- GET /cadernos, POST /cadernos, GET /cadernos/:id, PATCH /cadernos/:id, DELETE /cadernos/:id
+- GET /esp, POST /esp, GET /esp/:id, PATCH /esp/:id, DELETE /esp/:id
+- POST /files/upload (GridFS), GET /files/:id/stream, GET /files/:id/download
+- POST /export/pdf/:espId → gerar PDF com pdfkit; POST /export/docx/:espId → gerar DOCX
+- GET /logs
+- GET /health
+
+FRONTEND — IDENTIDADE VISUAL E ACESSIBILIDADE
+- Paleta e contrastes oficiais:
+  Azul #0361ad, Amarelo #fae947, Branco #ffffff, Preto #000000.
+  Garantir contraste AA nas combinações descritas (ex.: azul com branco ~9.6:1, amarelo com preto ~13.5:1). :contentReference[oaicite:3]{index=3}
+- Tipografia via next/font.
+- Componentes com foco visível, navegação por tab, rótulos ARIA e leitura de tela conforme descrições.
+- Ícones com lucide-react. Toasts via sonner.
+
+FRONTEND — PÁGINAS E FLUXO (implemente exatamente os layouts, cores, textos, rótulos e interações)
+Baseie o roteamento e o comportamento nas telas 1 a 6.1 e nas abas internas da ESP, fiel às descrições e ao fluxo macro. :contentReference[oaicite:4]{index=4}
+
+Páginas Públicas
+1) /  (Página 1 – Abertura)
+- Sem cabeçalho fixo. Fundo dividido em 3 blocos: esquerda azul, centro amarelo, direita azul.
+- Painel central azul com logo GDF, “SEEDF” e subtítulos. Faixa amarela inferior com botão “Entrar” e link “REGISTRAR”. Hover do botão: fundo amarelo, texto preto.
+- Todos os textos, cores, ARIA e WCAG conforme especificação. :contentReference[oaicite:5]{index=5}
+
+2) /register  (Página 2 – Registro)
+- Cabeçalho: faixa azul, logo GDF central, faixa amarela fina abaixo. Corpo: fundo azul integral, painel branco central com formulário.
+- Campos: Nome completo, E-mail institucional, Senha + botão de visualizar, Select Cargo [ARQUITETO, CHEFE DE NÚCLEO, GERENTE, DIRETOR], “Criar Conta” e link “Entrar”.
+- Validação com Zod + RHF. Após sucesso, redirecionar para /login. :contentReference[oaicite:6]{index=6}
+
+3) /login  (Página 3 – Login)
+- Mesmo cabeçalho. Painel branco com “Login”, e-mail, senha + visualizar, “Lembrar-me”, link “Esqueceu a Senha?”, botão “Entrar”.
+- Ao autenticar, chamar /loading. :contentReference[oaicite:7]{index=7}
+
+4) /recover  (Página 4 – Recuperação de Senha)
+- Cabeçalho igual. Painel branco com e-mail, botão “Enviar” e link “Voltar para o Login”. :contentReference[oaicite:8]{index=8}
+
+5) /loading  (Página 5 – Carregamento)
+- Tela de transição: fundo azul, “Entrando” e “espere só um pouquinho!”, spinner com tons azul e amarelo, logo GDF no rodapé. Após 1 a 2 s, redirecionar para /dashboard. :contentReference[oaicite:9]{index=9}
+
+Páginas Privadas (roteamento protegido)
+6) /dashboard  (Página 6 – Painel Principal)
+- Cabeçalho fixo azul com: esquerda logo GDF + “Sistema ESP / SEEDF”; centro-direita nome e cargo do usuário; direita sino de notificações e botão sair; faixa amarela fina como divisória.
+- Faixa de ações: “Visualizar Histórico”, “+ Criação de Itens”, “Novo Caderno”, “Nova ESP”.
+- Área de filtros: busca por nome/código, data, autor, status [Obsoleto, Em andamento, Aprovado], botão “Aplicar Filtros”.
+- Área de listagem: se vazia, mensagem “Nenhum CADERNO encontrado” e botão “+ Criar primeiro CADERNO”.
+- Implementar página 6.1 para listagem com ações por item: Visualizar, Editar, Baixar PDF. :contentReference[oaicite:10]{index=10}
+
+6.1) /dashboard/results  (Página 6.1 – Visualização de Documentos)
+- Lista com identificador, descrição, autor, data. Ações: Visualizar (pré-visualiza), Editar (abre editor da ESP), Baixar PDF. Scroll visível. :contentReference[oaicite:11]{index=11}
+
+Abas internas da ESP (fluxo de edição — todas sob rota privada, ex.: /esp/:id/...)
+- Cabeçalho fixo com Voltar, logo, usuário, sino e Sair. Menu lateral de abas com a ativa destacada. Cada aba deve ter área principal, botões laterais “Salvar”, “Atualizar”, “Abrir PDF”.
+7) Identificação: Tipologia, ID do componente, Código da listagem, Revisão, Data, Autor, Selo. Visibilidade da ESP. Ordem de tabulação e rótulos conforme descrição. :contentReference[oaicite:12]{index=12}
+8) Projetos: painel de upload com instruções, clique e arraste, foco amarelo quando ativo; integra GridFS. :contentReference[oaicite:13]{index=13}
+9) Descrição e Aplicação
+10) Execução
+11) Fichas de Referência
+12) Recebimento
+13) Serviços Incluídos
+14) Critérios de Medição, Legislação e Referências
+15) Visualização de PDF: usar @react-pdf-viewer para preview.
+16) Exportar PDF: gerar com pdfkit, baixar. :contentReference[oaicite:14]{index=14}
+
+17) Criação de Itens e Especificações Técnicas
+18) Criação de ESP
+- Respeitar exatamente o “Fluxo Geral do Sistema ESP (Visão Macro)” e o “Fluxo de Navegação Interna” para navegação entre botões e páginas, inclusive os retornos e validações. :contentReference[oaicite:15]{index=15}
+
+COMPONENTIZAÇÃO E UI
+- Criar componentes: HeaderInstitucional, BarraAcoes, FiltrosBusca, ListaDocumentos, BotaoPrimario, BotaoSecundario, CampoTexto, CampoSelect, CampoData, CampoSenhaComToggle, UploadDropzone, Toast, ModalConfirmacao.
+- Estilos Tailwind com tokens de cor fixos: azul #0361ad, amarelo #fae947, branco #ffffff, preto #000000. Layouts centralizados e responsivos conforme descrições e wireframes. :contentReference[oaicite:16]{index=16}
+
+REGRAS DE NEGÓCIO E RBAC
+- Perfil ARQUITETO: cria/edita ESPs.
+- CHEFE_DE_NUCLEO e GERENTE: validam e acompanham.
+- DIRETOR: aprova e exporta.
+- Toda rota de escrita exige autenticação e checagem de perfil. Erros padronizados.
+
+TESTES
+- Backend: vitest + supertest para auth, RBAC, criação de ESP, upload GridFS, export PDF.
+- Frontend: @testing-library/react para componentes de formulário, acessibilidade (tab, aria-label).
+
+SEEDS
+- Criar script de seed no server para 4 usuários de exemplo (um por perfil), 1 Caderno, 2 ESPs, 1 arquivo exemplo no GridFS.
+- Criar fixtures de dados para listas (tipologia, status, selos).
+
+ACESSIBILIDADE
+- Implementar rótulos ARIA e textos de leitor de tela iguais aos descritos nas páginas 1 a 6.1, incluindo descrições de botões, links e áreas de upload. Garantir foco visível e ordem de tabulação indicada nas especificações. :contentReference[oaicite:17]{index=17}
+
+WIREFRAMES
+- Siga fielmente a estrutura visual dos wireframes fornecidos para espaçamento, hierarquia, posição de botões, menus e blocos, inclusive a moldura visual da tela inicial. Onde a especificação textual prevalece, priorize a especificação textual. :contentReference[oaicite:18]{index=18}
+
+ENTREGAS
+- Projeto rodando com “npm run dev” na raiz (frontend em :3000 e backend em :4000).
+- Documentação Swagger em /api/docs.
+- README com instruções de setup, .env, scripts, e mapa de rotas.
+- Garantir que todas as páginas, cores, textos, acessibilidade e fluxos naveguem exatamente como descrito nas “Descrições das Páginas”, na “Tabela de Tecnologias”, nos “Wireframes” e no “Fluxo Geral”. :contentReference[oaicite:19]{index=19} :contentReference[oaicite:20]{index=20} :contentReference[oaicite:21]{index=21} :contentReference[oaicite:22]{index=22}
