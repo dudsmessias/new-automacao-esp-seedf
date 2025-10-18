@@ -50,8 +50,10 @@ export default function DashboardResults() {
   const { data: espsData, isLoading: isLoadingEsps } = useQuery({
     queryKey: ["/api", "esp"],
     queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch("/api/esp", {
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error("Failed to fetch ESPs");
       return response.json();

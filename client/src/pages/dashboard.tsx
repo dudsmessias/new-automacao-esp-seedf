@@ -36,8 +36,10 @@ export default function Dashboard() {
   const { data: cadernosData, isLoading: isLoadingCadernos } = useQuery({
     queryKey: ["/api", "cadernos"],
     queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch("/api/cadernos", {
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error("Failed to fetch cadernos");
       return response.json();
@@ -49,6 +51,7 @@ export default function Dashboard() {
   const { data: espsData, isLoading: isLoadingESPs } = useQuery({
     queryKey: ["/api/esp", activeFilters],
     queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
       const params = new URLSearchParams();
       if (activeFilters.search) params.append("search", activeFilters.search);
       if (activeFilters.author) params.append("author", activeFilters.author);
@@ -58,6 +61,7 @@ export default function Dashboard() {
       const url = `/api/esp${params.toString() ? `?${params.toString()}` : ""}`;
       const response = await fetch(url, {
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error("Failed to fetch ESPs");
       return response.json();
