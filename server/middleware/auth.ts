@@ -34,17 +34,23 @@ export function authenticateToken(
   res: Response,
   next: NextFunction
 ) {
+  console.log("🔍 Auth Debug - All cookies:", req.cookies);
+  console.log("🔍 Auth Debug - Headers:", req.headers.cookie);
+  
   const token = req.cookies?.esp_session;
 
   if (!token) {
+    console.log("❌ No token found in cookies");
     return res.status(401).json({ error: "Não autenticado" });
   }
 
   const user = verifyToken(token);
   if (!user) {
+    console.log("❌ Invalid token");
     return res.status(401).json({ error: "Token inválido" });
   }
 
+  console.log("✅ User authenticated:", user.email);
   req.user = user;
   next();
 }
