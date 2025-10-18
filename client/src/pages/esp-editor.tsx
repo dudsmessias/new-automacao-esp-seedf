@@ -45,6 +45,7 @@ const espFormSchema = z.object({
   tipologia: z.string().min(1, "Tipologia é obrigatória"),
   revisao: z.string().min(1, "Revisão é obrigatória"),
   dataPublicacao: z.date({ required_error: "Data de publicação é obrigatória" }),
+  cadernoId: z.string().optional(),
   selo: z.nativeEnum(Selo),
   visivel: z.boolean(),
   descricaoAplicacao: z.string().optional(),
@@ -73,17 +74,37 @@ export default function EspEditor() {
     setActiveTab(urlTab);
   }, [urlTab]);
 
-  // Fetch ESP data
+  // Determine if creating new ESP
+  const isNewEsp = espId === "novo";
+
+  // Fetch cadernos for creating new ESP
+  const { data: cadernosData } = useQuery({
+    queryKey: ["/api/cadernos"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/cadernos", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar cadernos");
+      return response.json();
+    },
+    enabled: isNewEsp,
+  });
+
+  // Fetch ESP data (skip if creating new)
   const { data: esp, isLoading, error } = useQuery({
     queryKey: ["/api/esp", espId],
     queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch(`/api/esp/${espId}`, {
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error("Erro ao carregar ESP");
       return response.json();
     },
-    enabled: !!espId,
+    enabled: !!espId && !isNewEsp,
   });
 
   // Form setup
@@ -131,28 +152,45 @@ export default function EspEditor() {
     }
   }, [esp]);
 
-  // Update mutation
+  // Create/Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: EspFormData) => {
-      const response = await fetch(`/api/esp/${espId}`, {
-        method: "PATCH",
+      const token = localStorage.getItem("esp_auth_token");
+      const url = isNewEsp ? "/api/esp" : `/api/esp/${espId}`;
+      const method = isNewEsp ? "POST" : "PATCH";
+      
+      // For new ESP, ensure cadernoId is set
+      let bodyData = { ...data };
+      if (isNewEsp && !bodyData.cadernoId && cadernosData?.cadernos?.[0]?.id) {
+        bodyData.cadernoId = cadernosData.cadernos[0].id;
+      }
+      
+      const response = await fetch(url, {
+        method,
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(bodyData),
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Erro ao atualizar ESP");
+        throw new Error(error.error || `Erro ao ${isNewEsp ? "criar" : "atualizar"} ESP`);
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/esp", espId] });
       queryClient.invalidateQueries({ queryKey: ["/api/esp"] });
+      
+      if (isNewEsp && data.esp?.id) {
+        // Redirect to the newly created ESP
+        setLocation(`/esp/${data.esp.id}/identificacao`);
+      }
+      
       toast({
-        title: "ESP atualizada",
+        title: isNewEsp ? "ESP criada" : "ESP atualizada",
         description: "As alterações foram salvas com sucesso.",
       });
     },
@@ -193,17 +231,19 @@ export default function EspEditor() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
 
-  // Fetch uploaded files for this ESP
+  // Fetch uploaded files for this ESP (skip if creating new)
   const { data: filesData } = useQuery<{ files: any[] }>({
     queryKey: ["/api/files", espId, "files"],
     queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch(`/api/files/${espId}/files`, {
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error("Erro ao carregar arquivos");
       return response.json();
     },
-    enabled: !!espId,
+    enabled: !!espId && !isNewEsp,
   });
 
   useEffect(() => {
@@ -226,9 +266,11 @@ export default function EspEditor() {
         formData.append("files", file);
       });
 
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch("/api/files/upload", {
         method: "POST",
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
         body: formData,
       });
 
@@ -259,9 +301,11 @@ export default function EspEditor() {
 
   const handleDownloadFile = async (fileId: string, filename: string) => {
     try {
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch(`/api/files/${fileId}/download`, {
         method: "GET",
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
 
       if (!response.ok) throw new Error("Erro ao baixar arquivo");
@@ -293,9 +337,11 @@ export default function EspEditor() {
     if (!confirm(`Deseja realmente excluir "${filename}"?`)) return;
 
     try {
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch(`/api/files/${fileId}`, {
         method: "DELETE",
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
 
       if (!response.ok) throw new Error("Erro ao deletar arquivo");
@@ -318,9 +364,11 @@ export default function EspEditor() {
 
   const handleExportPDF = async () => {
     try {
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch(`/api/export/pdf/${espId}`, {
         method: "POST",
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       
       if (!response.ok) throw new Error("Erro ao exportar PDF");
@@ -350,9 +398,11 @@ export default function EspEditor() {
 
   const handleExportDOCX = async () => {
     try {
+      const token = localStorage.getItem("esp_auth_token");
       const response = await fetch(`/api/export/docx/${espId}`, {
         method: "POST",
         credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       
       if (!response.ok) throw new Error("Erro ao exportar DOCX");

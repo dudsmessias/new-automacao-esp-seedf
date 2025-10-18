@@ -212,6 +212,21 @@ Diretor:
 - ✅ **Testes E2E**: Validados com ARQUITETO (PDF✅, DOCX❌) e DIRETOR (PDF✅, DOCX✅)
 - 💡 **Melhoria futura**: Esconder botão DOCX para não-DIRETOR para evitar toast de erro
 
+#### Task 6: Authentication Bug Fix ✅ COMPLETA
+- ✅ **Migração de HttpOnly Cookies para localStorage + Authorization Bearer Token**
+  - Problema: Cookies HttpOnly não estavam sendo enviados em requisições subsequentes após login
+  - Solução: localStorage armazena o token JWT, todas as requests incluem header `Authorization: Bearer <token>`
+- ✅ **Atualização de queryClient.ts**: 
+  - `apiRequest()` agora inclui token automaticamente
+  - `getQueryFn()` agora inclui token automaticamente
+- ✅ **Atualização de todas as queries customizadas**:
+  - Dashboard: queries de cadernos e ESPs com token
+  - Dashboard Results: query de ESPs com token
+  - ESP Editor: queries de ESP, arquivos, upload, download, delete, export com token
+- ✅ **Logout corrigido**: Limpa ambos `esp_auth_user` e `esp_auth_token` do localStorage
+- ✅ **Botão "Criação de Itens"**: Agora navega corretamente para `/esp/novo`
+- ✅ **Sistema 100% funcional**: Login → Dashboard → ESP Editor → Operações CRUD → Logout
+
 ### 🔄 Próximas Prioridades
 
 - [ ] Task 7: RBAC enforcement completo (middleware + frontend checks)

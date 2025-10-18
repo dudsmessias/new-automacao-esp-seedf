@@ -135,14 +135,16 @@ export default function Dashboard() {
             Visualizar Histórico
           </Button>
           
-          <Button
-            variant="outline"
-            className="gap-2"
-            data-testid="button-create-items"
-          >
-            <Plus className="h-4 w-4" />
-            Criação de Itens
-          </Button>
+          <Link href="/esp/novo">
+            <Button
+              variant="outline"
+              className="gap-2"
+              data-testid="button-create-items"
+            >
+              <Plus className="h-4 w-4" />
+              Criação de Itens
+            </Button>
+          </Link>
           
           <Link href="/caderno/novo">
             <Button
