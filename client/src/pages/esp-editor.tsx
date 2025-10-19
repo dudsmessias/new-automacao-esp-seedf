@@ -26,7 +26,7 @@ import { getAuthUser } from "@/lib/auth";
 
 const tabs = [
   { id: "identificacao", label: "Identificação" },
-  { id: "projetos", label: "Projetos Vinculados" },
+  { id: "projetos", label: "Projetos" },
   { id: "descricao", label: "Descrição e Aplicação" },
   { id: "execucao", label: "Execução" },
   { id: "fichas", label: "Fichas de Referência" },
@@ -658,7 +658,7 @@ export default function EspEditor() {
 
             {activeTab === "projetos" && (
               <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Projetos Vinculados</h1>
+                <h1 className="text-2xl font-bold">Projetos</h1>
                 <p className="text-muted-foreground">
                   Documentação e arquivos de projetos relacionados a esta especificação
                 </p>
