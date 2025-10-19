@@ -657,14 +657,174 @@ export default function EspEditor() {
             )}
 
             {activeTab === "projetos" && (
-              <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Projetos</h1>
-                <p className="text-muted-foreground">
-                  Documentação e arquivos de projetos relacionados a esta especificação
-                </p>
-                <div className="border rounded-lg p-8 text-center text-muted-foreground">
-                  <p>Lista de projetos vinculados será exibida aqui</p>
-                  <p className="text-sm mt-2">Recurso em desenvolvimento</p>
+              <div className="h-full flex flex-col">
+                {/* Header com botões de ação */}
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-2xl font-bold">Projetos</h1>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={handleSave}
+                      disabled={updateMutation.isPending}
+                      data-testid="button-save-projetos"
+                      className="gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      Salvar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/files", espId, "files"] })}
+                      data-testid="button-refresh-projetos"
+                      className="gap-2"
+                    >
+                      <Loader2 className="h-4 w-4" />
+                      Atualizar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleExportPDF}
+                      data-testid="button-open-pdf-projetos"
+                      className="gap-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Abrir PDF
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Área de upload customizada */}
+                <div className="flex-1 space-y-6">
+                  {/* Aviso superior */}
+                  <p className="text-sm text-black">
+                    Insira o arquivo já formatado conforme dimensões recomendadas em cartilha.
+                  </p>
+
+                  {/* Dropzone customizada */}
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.add("ring-4", "ring-institutional-yellow");
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("ring-4", "ring-institutional-yellow");
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("ring-4", "ring-institutional-yellow");
+                      const files = Array.from(e.dataTransfer.files);
+                      handleFilesSelected(files);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        document.getElementById('file-upload-projetos')?.click();
+                      }
+                    }}
+                    className="relative rounded-lg transition-all focus-within:ring-4 focus-within:ring-institutional-yellow"
+                    data-testid="upload-area-projetos"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Área de upload. Clique para selecionar arquivos de projeto."
+                  >
+                    <input
+                      type="file"
+                      accept="image/*,.pdf,.docx"
+                      multiple
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const files = Array.from(e.target.files);
+                          handleFilesSelected(files);
+                        }
+                      }}
+                      className="hidden"
+                      id="file-upload-projetos"
+                      data-testid="input-file-projetos"
+                      aria-label="Selecionar arquivos de projeto"
+                    />
+                    
+                    <label
+                      htmlFor="file-upload-projetos"
+                      className="cursor-pointer block bg-institutional-blue rounded-lg p-12 text-center"
+                      style={{ backgroundColor: "#0361ad" }}
+                    >
+                      <div className="flex flex-col items-center gap-4">
+                        <p className="text-black font-medium text-lg">Selecionar Arquivos</p>
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: "#ffffff" }}>
+                          <span className="text-5xl font-light" style={{ color: "#0361ad" }}>+</span>
+                        </div>
+                        <p className="text-black font-medium text-lg">Inserir Imagem</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Texto de arrastar e soltar */}
+                  <p className="text-sm text-center text-black">
+                    ou arraste e solte os arquivos aqui
+                  </p>
+
+                  {/* Loading state */}
+                  {isUploading && (
+                    <div className="flex items-center gap-2 p-4 bg-institutional-blue/10 border border-institutional-blue rounded-lg">
+                      <Loader2 className="h-4 w-4 animate-spin text-institutional-blue" />
+                      <span className="text-sm text-institutional-blue">Fazendo upload...</span>
+                    </div>
+                  )}
+
+                  {/* Lista de arquivos com scroll */}
+                  <div className="mt-6">
+                    <h2 className="text-lg font-semibold mb-3">Arquivos do Projeto ({uploadedFiles.length})</h2>
+                    {uploadedFiles.length === 0 ? (
+                      <div className="border rounded-lg p-8 text-center text-muted-foreground">
+                        <FileIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>Nenhum arquivo de projeto anexado ainda</p>
+                        <p className="text-sm mt-1">Faça upload de arquivos usando a área acima</p>
+                      </div>
+                    ) : (
+                      <div className="max-h-96 overflow-y-auto space-y-2 pr-2" data-testid="files-list-projetos">
+                        {uploadedFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center gap-3 p-4 bg-card border rounded-lg hover:border-institutional-blue transition-colors"
+                            data-testid={`file-item-${file.id}`}
+                          >
+                            <FileIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate" data-testid={`file-name-${file.id}`}>
+                                {file.filename}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {file.tipo} • {(file.fileSize / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                            <div className="flex gap-2 flex-shrink-0">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadFile(file.id, file.filename)}
+                                data-testid={`button-download-${file.id}`}
+                                className="gap-2"
+                              >
+                                <Download className="h-4 w-4" />
+                                Baixar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteFile(file.id, file.filename)}
+                                data-testid={`button-delete-${file.id}`}
+                                className="gap-2 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Excluir
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
