@@ -64,6 +64,7 @@ const espFormSchema = z.object({
   aplicacoesIds: z.array(z.string()).optional(),
   constituintesExecucaoIds: z.array(z.string()).optional(),
   fichasReferenciaIds: z.array(z.string()).optional(),
+  fichasRecebimentoIds: z.array(z.string()).optional(),
 });
 
 type EspFormData = z.infer<typeof espFormSchema>;
@@ -78,6 +79,7 @@ export default function EspEditor() {
   const user = getAuthUser();
   const [numConstituintesExecucao, setNumConstituintesExecucao] = useState(5);
   const [numFichasReferencia, setNumFichasReferencia] = useState(1);
+  const [numFichasRecebimento, setNumFichasRecebimento] = useState(1);
 
   // Sync active tab with URL
   useEffect(() => {
@@ -117,6 +119,20 @@ export default function EspEditor() {
     enabled: !!espId && !isNewEsp,
   });
 
+  // Fetch Fichas de Recebimento catalog data
+  const { data: fichasRecebimentoData } = useQuery({
+    queryKey: ["/api/catalog/fichas-recebimento"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/catalog/fichas-recebimento", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar fichas de recebimento");
+      return response.json();
+    },
+  });
+
   // Form setup
   const form = useForm<EspFormData>({
     resolver: zodResolver(espFormSchema),
@@ -143,6 +159,7 @@ export default function EspEditor() {
       aplicacoesIds: [],
       constituintesExecucaoIds: [],
       fichasReferenciaIds: [],
+      fichasRecebimentoIds: [],
     },
   });
 
@@ -174,13 +191,16 @@ export default function EspEditor() {
         aplicacoesIds: esp.aplicacoesIds || [],
         constituintesExecucaoIds: esp.constituintesExecucaoIds || [],
         fichasReferenciaIds: esp.fichasReferenciaIds || [],
+        fichasRecebimentoIds: esp.fichasRecebimentoIds || [],
       }, { keepDefaultValues: false });
       
       // Sync UI state with loaded data
       const execucaoIds = esp.constituintesExecucaoIds || [];
       const fichasIds = esp.fichasReferenciaIds || [];
+      const recebimentoIds = esp.fichasRecebimentoIds || [];
       setNumConstituintesExecucao(Math.max(5, execucaoIds.length));
       setNumFichasReferencia(Math.max(1, fichasIds.length));
+      setNumFichasRecebimento(Math.max(1, recebimentoIds.length));
     }
   }, [esp]);
 
@@ -1317,17 +1337,122 @@ export default function EspEditor() {
             )}
 
             {activeTab === "recebimento" && (
-              <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Recebimento</h1>
-                <div>
-                  <Label htmlFor="recebimento">Conteúdo</Label>
-                  <Textarea
-                    id="recebimento"
-                    data-testid="textarea-recebimento"
-                    className="mt-1 min-h-[300px]"
-                    placeholder="Descreva os critérios de recebimento..."
-                    {...form.register("recebimento")}
-                  />
+              <div className="h-full flex flex-col">
+                {/* Header com botões de ação */}
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-2xl font-bold text-black">Recebimento</h1>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleSave}
+                      disabled={updateMutation.isPending}
+                      data-testid="button-save-recebimento"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Salvar — grava os arquivos enviados."
+                    >
+                      <Save className="h-4 w-4" />
+                      Salvar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/esp", espId] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/catalog/fichas-recebimento"] });
+                        toast({ title: "Dados atualizados" });
+                      }}
+                      data-testid="button-refresh-recebimento"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Atualizar — recarregar as listas de banco de dados."
+                    >
+                      <Loader2 className="h-4 w-4" />
+                      Atualizar
+                    </Button>
+                    <Button
+                      onClick={handleExportPDF}
+                      disabled={isNewEsp}
+                      data-testid="button-open-pdf-recebimento"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Abrir PDF — gera ou abre o arquivo PDF da ESP."
+                    >
+                      <FileText className="h-4 w-4" />
+                      Abrir PDF
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Área principal do formulário com scroll */}
+                <div className="flex-1 overflow-auto max-w-4xl space-y-6 pr-4">
+                  {/* Select Boxes dinâmicos para Fichas de Recebimento */}
+                  {Array.from({ length: numFichasRecebimento }).map((_, index) => {
+                    const fichasRecebimentoIds = form.watch("fichasRecebimentoIds") || [];
+                    return (
+                      <div key={index} className="flex items-end gap-2">
+                        <div className="flex-1">
+                          <Label htmlFor={`ficha-recebimento-${index}`} className="text-black">
+                            Ficha {index + 1}
+                          </Label>
+                          <Select
+                            value={fichasRecebimentoIds[index] || ""}
+                            onValueChange={(value) => {
+                              const current = form.getValues("fichasRecebimentoIds") || [];
+                              const updated = [...current];
+                              updated[index] = value;
+                              form.setValue("fichasRecebimentoIds", updated, { shouldDirty: true });
+                            }}
+                          >
+                            <SelectTrigger 
+                              id={`ficha-recebimento-${index}`}
+                              className="mt-1"
+                              data-testid={`select-ficha-recebimento-${index}`}
+                              aria-label="Campo de seleção. Escolha a ficha de recebimento vinculada ao componente."
+                            >
+                              <SelectValue placeholder={`Escolha a ficha ${index + 1}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {fichasRecebimentoData?.fichasRecebimento?.map((ficha: { id: string; nome: string }) => (
+                                <SelectItem key={ficha.id} value={ficha.id}>
+                                  {ficha.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {index >= 1 && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setNumFichasRecebimento(prev => prev - 1);
+                              const current = form.getValues("fichasRecebimentoIds") || [];
+                              form.setValue("fichasRecebimentoIds", current.filter((_, i) => i !== index), { shouldDirty: true });
+                            }}
+                            className="gap-2 text-destructive hover:text-destructive"
+                            data-testid={`button-remove-ficha-recebimento-${index}`}
+                            aria-label={`Remover ficha ${index + 1}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Botão para adicionar nova ficha */}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setNumFichasRecebimento(prev => prev + 1);
+                      const current = form.getValues("fichasRecebimentoIds") || [];
+                      form.setValue("fichasRecebimentoIds", [...current, ""], { shouldDirty: true });
+                    }}
+                    className="gap-2"
+                    data-testid="button-add-ficha-recebimento"
+                    aria-label="Adicionar nova ficha de recebimento"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Adicionar Ficha
+                  </Button>
                 </div>
               </div>
             )}

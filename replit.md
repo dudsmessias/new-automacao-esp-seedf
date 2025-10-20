@@ -21,10 +21,10 @@ The design adheres strictly to the official SEEDF visual identity, utilizing a t
 -   **Data Models:**
     -   **User:** Manages various profiles (ARQUITETO, CHEFE_DE_NUCLEO, GERENTE, DIRETOR) with role-based access control (RBAC).
     -   **Caderno:** Represents specification notebooks with statuses (OBSOLETO, EM_ANDAMENTO, APROVADO).
-    -   **ESP (Especificação):** Core entity with detailed fields, including content, status, and associated files. Extended fields include `introduzirComponente` (text) and 7 array fields: `constituentesIds`, `acessoriosIds`, `acabamentosIds`, `prototiposIds`, `aplicacoesIds`, `constituintesExecucaoIds`, `fichasReferenciaIds` (all text arrays).
+    -   **ESP (Especificação):** Core entity with detailed fields, including content, status, and associated files. Extended fields include `introduzirComponente` (text) and 8 array fields: `constituentesIds`, `acessoriosIds`, `acabamentosIds`, `prototiposIds`, `aplicacoesIds`, `constituintesExecucaoIds`, `fichasReferenciaIds`, `fichasRecebimentoIds` (all text arrays).
     -   **ArquivoMidia:** Stores file metadata, with actual file data (base64 encoded) stored directly in PostgreSQL.
     -   **LogAtividade:** Audits all user actions within the system.
-    -   **Catalog Tables:** `constituintes`, `acessorios`, `acabamentos`, `prototipos_comerciais`, `aplicacoes` for managing selectable options in the ESP editor.
+    -   **Catalog Tables:** `constituintes`, `acessorios`, `acabamentos`, `prototipos_comerciais`, `aplicacoes`, `fichas_recebimento` for managing selectable options in the ESP editor.
 -   **File Storage:** Files are stored as base64 encoded strings within the PostgreSQL database for simplicity in the current iteration. Multer handles multipart form data for file uploads.
 -   **Document Export:** PDFKit is used for PDF generation, and `docx` library for DOCX generation, both adhering to institutional formatting.
 -   **Authentication:** JWT tokens are stored in `localStorage` and sent via `Authorization: Bearer` headers for secure, stateless authentication. Logout clears the token and user data from `localStorage`.
@@ -35,12 +35,27 @@ The design adheres strictly to the official SEEDF visual identity, utilizing a t
         -   **Descrição e Aplicação:** 5 catalog-based dropdown selections (Constituintes, Acessórios, Acabamentos, Protótipos Comerciais, Aplicações)
         -   **Execução:** Dynamic constituent selection system with initially 5 select boxes, expandable via "+" button, removable (beyond first 5) via trash icon
         -   **Fichas de Referência:** Catalog-based item relationship system with initially 1 select box, expandable via "+" button, removable (beyond first item) via trash icon
-        -   **Recebimento, Serviços Incluídos, Critérios de Medição, Legislação e Referências:** Text areas for detailed content
+        -   **Recebimento:** Catalog-based ficha selection system with initially 1 select box, expandable via "+" button, removable (beyond first ficha) via trash icon
+        -   **Serviços Incluídos, Critérios de Medição, Legislação e Referências:** Text areas for detailed content
         -   **Visualizar PDF, Exportar:** Document export functionalities
     -   **Dashboard:** Provides filtering and search capabilities for managing ESPs.
     -   **Role-Based Access Control (RBAC):** Permissions are defined for ARQUITETO (create/edit ESPs, upload files), CHEFE_DE_NUCLEO/GERENTE (validate/monitor ESPs), and DIRETOR (approve ESPs, export DOCX, full access).
 
 ## Recent Development Notes
+
+### Recebimento Tab Implementation (October 2025)
+-   **Feature:** Catalog-based ficha selection system for managing reception criteria and inspection documents.
+-   **Implementation:**
+    -   New `fichas_recebimento` catalog table with 7 example fichas (Materiais Hidráulicos, Conferência Elétrica, Estruturas Metálicas, etc.)
+    -   New `fichasRecebimentoIds` text array field in ESP table
+    -   Dynamic UI with initially 1 select box, expandable via "+" button
+    -   Action buttons (Salvar, Atualizar, Abrir PDF) with institutional black (#000000) background
+    -   `numFichasRecebimento` state controls UI rendering
+-   **API Route:** GET /api/catalog/fichas-recebimento
+-   **Critical Fix:** State synchronization in useEffect ensures saved fichas display correctly when editing existing ESPs
+    -   `setNumFichasRecebimento(Math.max(1, esp.fichasRecebimentoIds.length))`
+-   **Bug Fix:** Removed empty value SelectItem to prevent Radix UI Select error
+-   **Testing:** E2E Playwright tests validate add/remove behavior, button styling, catalog loading, and state synchronization
 
 ### Fichas de Referência Tab Implementation (October 2025)
 -   **Feature:** Catalog-based item relationship system allowing users to link items from other catalogs to the current ESP.
