@@ -16,7 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, FileText, CalendarIcon, Loader2, Download, Trash2, File as FileIcon } from "lucide-react";
+import { ArrowLeft, Save, FileText, CalendarIcon, Loader2, Download, Trash2, File as FileIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -1069,17 +1069,119 @@ export default function EspEditor() {
             )}
 
             {activeTab === "execucao" && (
-              <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Execução</h1>
-                <div>
-                  <Label htmlFor="execucao">Conteúdo</Label>
-                  <Textarea
-                    id="execucao"
-                    data-testid="textarea-execucao"
-                    className="mt-1 min-h-[300px]"
-                    placeholder="Descreva os procedimentos de execução..."
-                    {...form.register("execucao")}
-                  />
+              <div className="h-full flex flex-col">
+                {/* Header com botões de ação */}
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-2xl font-bold text-black">Execução</h1>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleSave}
+                      disabled={updateMutation.isPending}
+                      data-testid="button-save-execucao"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                    >
+                      <Save className="h-4 w-4" />
+                      Salvar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/esp", espId] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/catalog/constituintes"] });
+                        toast({ title: "Dados atualizados" });
+                      }}
+                      data-testid="button-refresh-execucao"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                    >
+                      <Loader2 className="h-4 w-4" />
+                      Atualizar
+                    </Button>
+                    <Button
+                      onClick={handleExportPDF}
+                      disabled={isNewEsp}
+                      data-testid="button-open-pdf-execucao"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                    >
+                      <FileText className="h-4 w-4" />
+                      Abrir PDF
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Área principal do formulário com scroll */}
+                <div className="flex-1 overflow-auto max-w-4xl space-y-6 pr-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Selecione os itens de controle técnico da execução. Use o botão "+" para adicionar mais constituintes.
+                  </p>
+
+                  {/* Lista dinâmica de constituintes */}
+                  {(() => {
+                    const currentConstituintes = form.watch("constituintesExecucaoIds") || [];
+                    const minItems = 5;
+                    const itemsToShow = Math.max(minItems, currentConstituintes.length);
+                    
+                    return Array.from({ length: itemsToShow }).map((_, index) => (
+                      <div key={index} className="flex gap-3 items-start">
+                        <div className="flex-1">
+                          <Label htmlFor={`constituinte-${index}`} className="text-black">
+                            Constituinte {index + 1}
+                          </Label>
+                          <Select
+                            value={currentConstituintes[index] || ""}
+                            onValueChange={(value) => {
+                              const updated = [...currentConstituintes];
+                              updated[index] = value;
+                              form.setValue("constituintesExecucaoIds", updated);
+                            }}
+                          >
+                            <SelectTrigger
+                              id={`constituinte-${index}`}
+                              data-testid={`select-constituinte-execucao-${index}`}
+                              className="mt-1 bg-white text-black border-gray-300"
+                              aria-label={`Campo de seleção. Escolha o ${index === 0 ? 'primeiro' : index === 1 ? 'segundo' : index === 2 ? 'terceiro' : index === 3 ? 'quarto' : index === 4 ? 'quinto' : (index + 1) + 'º'} item de controle de execução.`}
+                            >
+                              <SelectValue placeholder={`Escolha o constituinte ${index + 1}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="temp-loading">Carregando...</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {index >= minItems && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              const updated = currentConstituintes.filter((_, i) => i !== index);
+                              form.setValue("constituintesExecucaoIds", updated);
+                            }}
+                            className="mt-7"
+                            data-testid={`button-remove-constituinte-${index}`}
+                            aria-label={`Remover constituinte ${index + 1}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ));
+                  })()}
+
+                  {/* Botão para adicionar novo constituinte */}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const current = form.watch("constituintesExecucaoIds") || [];
+                      form.setValue("constituintesExecucaoIds", [...current, ""]);
+                    }}
+                    className="gap-2"
+                    data-testid="button-add-constituinte-execucao"
+                    aria-label="Adicionar novo constituinte de execução"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Adicionar Constituinte
+                  </Button>
                 </div>
               </div>
             )}
