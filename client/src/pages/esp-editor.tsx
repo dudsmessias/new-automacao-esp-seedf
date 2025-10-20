@@ -879,17 +879,16 @@ export default function EspEditor() {
                   <h1 className="text-2xl font-bold text-black">Descrição e Aplicação</h1>
                   <div className="flex gap-3">
                     <Button
-                      variant="outline"
                       onClick={handleSave}
                       disabled={updateMutation.isPending}
                       data-testid="button-save-descricao"
-                      className="gap-2 border-black text-black hover:bg-black hover:text-white"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
                     >
                       <Save className="h-4 w-4" />
                       Salvar
                     </Button>
                     <Button
-                      variant="outline"
                       onClick={() => {
                         // Recarregar dados da ESP
                         queryClient.invalidateQueries({ queryKey: ["/api/esp", espId] });
@@ -901,17 +900,18 @@ export default function EspEditor() {
                         toast({ title: "Dados atualizados" });
                       }}
                       data-testid="button-refresh-descricao"
-                      className="gap-2 border-black text-black hover:bg-black hover:text-white"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
                     >
                       <Loader2 className="h-4 w-4" />
                       Atualizar
                     </Button>
                     <Button
-                      variant="outline"
                       onClick={handleExportPDF}
                       disabled={isNewEsp}
                       data-testid="button-open-pdf-descricao"
-                      className="gap-2 border-black text-black hover:bg-black hover:text-white"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
                     >
                       <FileText className="h-4 w-4" />
                       Abrir PDF
