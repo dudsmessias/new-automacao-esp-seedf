@@ -60,6 +60,111 @@ export async function seedDatabase() {
       throw new Error("Arquiteto user not found");
     }
 
+    // Create catalog data for Descrição e Aplicação
+    // Constituintes
+    const constituentesData = [
+      { nome: "Argamassa de cimento e areia" },
+      { nome: "Blocos cerâmicos" },
+      { nome: "Blocos de concreto" },
+      { nome: "Concreto estrutural" },
+      { nome: "Aço CA-50" },
+      { nome: "Aço CA-60" },
+      { nome: "Tinta látex acrílica" },
+      { nome: "Tinta epóxi" },
+    ];
+
+    for (const data of constituentesData) {
+      const existing = await storage.getConstituenteByNome(data.nome);
+      if (!existing) {
+        await storage.createConstituinte(data);
+        logger.info(`Constituinte created: ${data.nome}`);
+      } else {
+        logger.info(`Constituinte already exists: ${data.nome}`);
+      }
+    }
+
+    // Acessórios
+    const acessoriosData = [
+      { nome: "Parafusos 3/8\"" },
+      { nome: "Pregos 18x27" },
+      { nome: "Buchas S8" },
+      { nome: "Dobradiças 3\" cromadas" },
+      { nome: "Fechadura com chave" },
+      { nome: "Puxadores em alumínio" },
+    ];
+
+    for (const data of acessoriosData) {
+      const existing = await storage.getAcessorioByNome(data.nome);
+      if (!existing) {
+        await storage.createAcessorio(data);
+        logger.info(`Acessório created: ${data.nome}`);
+      } else {
+        logger.info(`Acessório already exists: ${data.nome}`);
+      }
+    }
+
+    // Acabamentos
+    const acabamentosData = [
+      { nome: "Pintura lisa" },
+      { nome: "Pintura texturizada" },
+      { nome: "Revestimento cerâmico" },
+      { nome: "Porcelanato" },
+      { nome: "Gesso liso" },
+      { nome: "Forro de PVC" },
+    ];
+
+    for (const data of acabamentosData) {
+      const existing = await storage.getAcabamentoByNome(data.nome);
+      if (!existing) {
+        await storage.createAcabamento(data);
+        logger.info(`Acabamento created: ${data.nome}`);
+      } else {
+        logger.info(`Acabamento already exists: ${data.nome}`);
+      }
+    }
+
+    // Protótipos Comerciais
+    const prototiposData = [
+      { item: "Cano PVC 20mm", marca: "Tigre" },
+      { item: "Cano PVC 20mm", marca: "Gravia" },
+      { item: "Cano PVC 25mm", marca: "Tigre" },
+      { item: "Barra de ferro 20x30mm", marca: "Gerdau" },
+      { item: "Barra de ferro 20x30mm", marca: "Belgo" },
+      { item: "Tinta látex 18L", marca: "Suvinil" },
+      { item: "Tinta látex 18L", marca: "Coral" },
+      { item: "Cimento 50kg", marca: "Votorantim" },
+    ];
+
+    for (const data of prototiposData) {
+      const existing = await storage.getPrototipoComercialByItemMarca(data.item, data.marca);
+      if (!existing) {
+        await storage.createPrototipoComercial(data);
+        logger.info(`Protótipo comercial created: ${data.item} - ${data.marca}`);
+      } else {
+        logger.info(`Protótipo comercial already exists: ${data.item} - ${data.marca}`);
+      }
+    }
+
+    // Aplicações
+    const aplicacoesData = [
+      { nome: "Infraestrutura" },
+      { nome: "Acabamento" },
+      { nome: "Elétrica" },
+      { nome: "Hidráulica" },
+      { nome: "Estrutural" },
+      { nome: "Revestimento" },
+    ];
+
+    for (const data of aplicacoesData) {
+      const existing = await storage.getAplicacaoByNome(data.nome);
+      if (!existing) {
+        await storage.createAplicacao(data);
+        logger.info(`Aplicação created: ${data.nome}`);
+      } else {
+        logger.info(`Aplicação already exists: ${data.nome}`);
+      }
+    }
+
     // Create 1 Caderno (check if exists first)
     const allCadernos = await storage.getCadernos();
     let caderno = allCadernos.find(c => c.titulo === "Caderno de Especificações - Edificações 2025");

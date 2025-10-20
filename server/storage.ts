@@ -10,6 +10,16 @@ import {
   type ArquivoMidia,
   type InsertArquivoMidia,
   type UserWithoutPassword,
+  type Constituinte,
+  type InsertConstituinte,
+  type Acessorio,
+  type InsertAcessorio,
+  type Acabamento,
+  type InsertAcabamento,
+  type PrototipoComercial,
+  type InsertPrototipoComercial,
+  type Aplicacao,
+  type InsertAplicacao,
   Perfil,
   StatusCaderno,
   Selo,
@@ -19,6 +29,11 @@ import {
   esps,
   arquivosMidia,
   logsAtividade,
+  constituintes,
+  acessorios,
+  acabamentos,
+  prototiposComerciais,
+  aplicacoes,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -54,6 +69,27 @@ export interface IStorage {
   // LogAtividade methods
   createLog(log: InsertLogAtividade): Promise<LogAtividade>;
   getLogs(userId?: string): Promise<LogAtividade[]>;
+  
+  // Catalog methods
+  getConstituintes(): Promise<Constituinte[]>;
+  getConstituenteByNome(nome: string): Promise<Constituinte | undefined>;
+  createConstituinte(constituinte: InsertConstituinte): Promise<Constituinte>;
+  
+  getAcessorios(): Promise<Acessorio[]>;
+  getAcessorioByNome(nome: string): Promise<Acessorio | undefined>;
+  createAcessorio(acessorio: InsertAcessorio): Promise<Acessorio>;
+  
+  getAcabamentos(): Promise<Acabamento[]>;
+  getAcabamentoByNome(nome: string): Promise<Acabamento | undefined>;
+  createAcabamento(acabamento: InsertAcabamento): Promise<Acabamento>;
+  
+  getPrototiposComerciais(): Promise<PrototipoComercial[]>;
+  getPrototipoComercialByItemMarca(item: string, marca: string): Promise<PrototipoComercial | undefined>;
+  createPrototipoComercial(prototipo: InsertPrototipoComercial): Promise<PrototipoComercial>;
+  
+  getAplicacoes(): Promise<Aplicacao[]>;
+  getAplicacaoByNome(nome: string): Promise<Aplicacao | undefined>;
+  createAplicacao(aplicacao: InsertAplicacao): Promise<Aplicacao>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -276,6 +312,124 @@ export class DatabaseStorage implements IStorage {
       return await db.select().from(logsAtividade).where(eq(logsAtividade.userId, userId));
     }
     return await db.select().from(logsAtividade);
+  }
+
+  // Catalog methods
+  async getConstituintes(): Promise<Constituinte[]> {
+    return await db.select().from(constituintes).where(eq(constituintes.ativo, true));
+  }
+
+  async getConstituenteByNome(nome: string): Promise<Constituinte | undefined> {
+    const result = await db.select().from(constituintes).where(eq(constituintes.nome, nome)).limit(1);
+    return result[0];
+  }
+
+  async createConstituinte(insertConstituinte: InsertConstituinte): Promise<Constituinte> {
+    const id = randomUUID();
+    const now = new Date();
+    const values: Constituinte = {
+      id,
+      nome: insertConstituinte.nome,
+      ativo: insertConstituinte.ativo ?? true,
+      createdAt: now,
+    };
+    await db.insert(constituintes).values(values);
+    return values;
+  }
+
+  async getAcessorios(): Promise<Acessorio[]> {
+    return await db.select().from(acessorios).where(eq(acessorios.ativo, true));
+  }
+
+  async getAcessorioByNome(nome: string): Promise<Acessorio | undefined> {
+    const result = await db.select().from(acessorios).where(eq(acessorios.nome, nome)).limit(1);
+    return result[0];
+  }
+
+  async createAcessorio(insertAcessorio: InsertAcessorio): Promise<Acessorio> {
+    const id = randomUUID();
+    const now = new Date();
+    const values: Acessorio = {
+      id,
+      nome: insertAcessorio.nome,
+      ativo: insertAcessorio.ativo ?? true,
+      createdAt: now,
+    };
+    await db.insert(acessorios).values(values);
+    return values;
+  }
+
+  async getAcabamentos(): Promise<Acabamento[]> {
+    return await db.select().from(acabamentos).where(eq(acabamentos.ativo, true));
+  }
+
+  async getAcabamentoByNome(nome: string): Promise<Acabamento | undefined> {
+    const result = await db.select().from(acabamentos).where(eq(acabamentos.nome, nome)).limit(1);
+    return result[0];
+  }
+
+  async createAcabamento(insertAcabamento: InsertAcabamento): Promise<Acabamento> {
+    const id = randomUUID();
+    const now = new Date();
+    const values: Acabamento = {
+      id,
+      nome: insertAcabamento.nome,
+      ativo: insertAcabamento.ativo ?? true,
+      createdAt: now,
+    };
+    await db.insert(acabamentos).values(values);
+    return values;
+  }
+
+  async getPrototiposComerciais(): Promise<PrototipoComercial[]> {
+    return await db.select().from(prototiposComerciais).where(eq(prototiposComerciais.ativo, true));
+  }
+
+  async getPrototipoComercialByItemMarca(item: string, marca: string): Promise<PrototipoComercial | undefined> {
+    const result = await db.select()
+      .from(prototiposComerciais)
+      .where(and(
+        eq(prototiposComerciais.item, item),
+        eq(prototiposComerciais.marca, marca)
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async createPrototipoComercial(insertProto: InsertPrototipoComercial): Promise<PrototipoComercial> {
+    const id = randomUUID();
+    const now = new Date();
+    const values: PrototipoComercial = {
+      id,
+      item: insertProto.item,
+      marca: insertProto.marca,
+      ativo: insertProto.ativo ?? true,
+      createdAt: now,
+    };
+    await db.insert(prototiposComerciais).values(values);
+    return values;
+  }
+
+  async getAplicacoes(): Promise<Aplicacao[]> {
+    return await db.select().from(aplicacoes).where(eq(aplicacoes.ativo, true));
+  }
+
+  async getAplicacaoByNome(nome: string): Promise<Aplicacao | undefined> {
+    const result = await db.select().from(aplicacoes).where(eq(aplicacoes.nome, nome)).limit(1);
+    return result[0];
+  }
+
+  async createAplicacao(insertAplicacao: InsertAplicacao): Promise<Aplicacao> {
+    const id = randomUUID();
+    const now = new Date();
+    const values: Aplicacao = {
+      id,
+      nome: insertAplicacao.nome,
+      ativo: insertAplicacao.ativo ?? true,
+      createdAt: now,
+    };
+    await db.insert(aplicacoes).values(values);
+    return values;
   }
 }
 
