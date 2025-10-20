@@ -75,6 +75,7 @@ export default function EspEditor() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const user = getAuthUser();
+  const [numConstituintesExecucao, setNumConstituintesExecucao] = useState(5);
 
   // Sync active tab with URL
   useEffect(() => {
@@ -1117,12 +1118,9 @@ export default function EspEditor() {
                   </p>
 
                   {/* Lista dinâmica de constituintes */}
-                  {(() => {
+                  {Array.from({ length: numConstituintesExecucao }).map((_, index) => {
                     const currentConstituintes = form.watch("constituintesExecucaoIds") || [];
-                    const minItems = 5;
-                    const itemsToShow = Math.max(minItems, currentConstituintes.length);
-                    
-                    return Array.from({ length: itemsToShow }).map((_, index) => (
+                    return (
                       <div key={index} className="flex gap-3 items-start">
                         <div className="flex-1">
                           <Label htmlFor={`constituinte-${index}`} className="text-black">
@@ -1133,7 +1131,7 @@ export default function EspEditor() {
                             onValueChange={(value) => {
                               const updated = [...currentConstituintes];
                               updated[index] = value;
-                              form.setValue("constituintesExecucaoIds", updated);
+                              form.setValue("constituintesExecucaoIds", updated, { shouldDirty: true });
                             }}
                           >
                             <SelectTrigger
@@ -1149,13 +1147,15 @@ export default function EspEditor() {
                             </SelectContent>
                           </Select>
                         </div>
-                        {index >= minItems && (
+                        {index >= 5 && (
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => {
+                              const currentConstituintes = form.getValues("constituintesExecucaoIds") || [];
                               const updated = currentConstituintes.filter((_, i) => i !== index);
-                              form.setValue("constituintesExecucaoIds", updated);
+                              form.setValue("constituintesExecucaoIds", updated, { shouldDirty: true });
+                              setNumConstituintesExecucao(prev => prev - 1);
                             }}
                             className="mt-7"
                             data-testid={`button-remove-constituinte-${index}`}
@@ -1165,15 +1165,16 @@ export default function EspEditor() {
                           </Button>
                         )}
                       </div>
-                    ));
-                  })()}
+                    );
+                  })}
 
                   {/* Botão para adicionar novo constituinte */}
                   <Button
                     variant="outline"
                     onClick={() => {
-                      const current = form.watch("constituintesExecucaoIds") || [];
-                      form.setValue("constituintesExecucaoIds", [...current, ""]);
+                      setNumConstituintesExecucao(prev => prev + 1);
+                      const current = form.getValues("constituintesExecucaoIds") || [];
+                      form.setValue("constituintesExecucaoIds", [...current, ""], { shouldDirty: true });
                     }}
                     className="gap-2"
                     data-testid="button-add-constituinte-execucao"
