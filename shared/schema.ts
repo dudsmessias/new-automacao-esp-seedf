@@ -66,6 +66,87 @@ export const insertCadernoSchema = createInsertSchema(cadernos).omit({
 export type InsertCaderno = z.infer<typeof insertCadernoSchema>;
 export type Caderno = typeof cadernos.$inferSelect;
 
+// Constituintes catalog
+export const constituintes = pgTable("constituintes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  nome: text("nome").notNull(),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertConstituenteSchema = createInsertSchema(constituintes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertConstituinte = z.infer<typeof insertConstituenteSchema>;
+export type Constituinte = typeof constituintes.$inferSelect;
+
+// Acessórios catalog
+export const acessorios = pgTable("acessorios", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  nome: text("nome").notNull(),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAcessorioSchema = createInsertSchema(acessorios).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAcessorio = z.infer<typeof insertAcessorioSchema>;
+export type Acessorio = typeof acessorios.$inferSelect;
+
+// Acabamentos catalog
+export const acabamentos = pgTable("acabamentos", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  nome: text("nome").notNull(),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAcabamentoSchema = createInsertSchema(acabamentos).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAcabamento = z.infer<typeof insertAcabamentoSchema>;
+export type Acabamento = typeof acabamentos.$inferSelect;
+
+// Protótipos Comerciais catalog
+export const prototiposComerciais = pgTable("prototipos_comerciais", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  item: text("item").notNull(), // ex: "cano pvc", "barra de ferro 20x30"
+  marca: text("marca").notNull(), // ex: "Tigre", "Gravia"
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPrototipoComercialSchema = createInsertSchema(prototiposComerciais).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPrototipoComercial = z.infer<typeof insertPrototipoComercialSchema>;
+export type PrototipoComercial = typeof prototiposComerciais.$inferSelect;
+
+// Aplicações catalog
+export const aplicacoes = pgTable("aplicacoes", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  nome: text("nome").notNull(), // ex: "infraestrutura", "acabamento", "elétrica"
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertAplicacaoSchema = createInsertSchema(aplicacoes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAplicacao = z.infer<typeof insertAplicacaoSchema>;
+export type Aplicacao = typeof aplicacoes.$inferSelect;
+
 // ESP model
 export const esps = pgTable("esps", {
   id: varchar("id", { length: 36 }).primaryKey(),
@@ -78,6 +159,7 @@ export const esps = pgTable("esps", {
   selo: text("selo").notNull().$type<Selo>().default(Selo.NENHUM),
   cadernoId: varchar("caderno_id", { length: 36 }).notNull().references(() => cadernos.id),
   visivel: boolean("visivel").notNull().default(true),
+  // Campos de conteúdo
   descricaoAplicacao: text("descricao_aplicacao"),
   execucao: text("execucao"),
   fichasReferencia: text("fichas_referencia"),
@@ -86,6 +168,13 @@ export const esps = pgTable("esps", {
   criteriosMedicao: text("criterios_medicao"),
   legislacao: text("legislacao"),
   referencias: text("referencias"),
+  // Novos campos para Descrição e Aplicação
+  introduzirComponente: text("introduzir_componente"),
+  constituentesIds: text("constituintes_ids").array(), // Array de IDs
+  acessoriosIds: text("acessorios_ids").array(),
+  acabamentosIds: text("acabamentos_ids").array(),
+  prototiposIds: text("prototipos_ids").array(),
+  aplicacoesIds: text("aplicacoes_ids").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -1,0 +1,41 @@
+ Agora vamos mexer na página "Descrição e Aplicação", pois está sem a função que preciso.
+A área de menu continua o mesmo
+o cabeçalho continua o mesmo
+o que mudar:
+3) Área principal — Formulário de Descrição e Aplicação
+Área central ( ao lado direito do menu) destinada ao registro das informações técnicas e descritivas da ESP.
+ Todos os campos seguem o padrão visual de texto preto #000000 sobre fundo branco #ffffff, com rótulos e bordas finas cinza claro.
+Campos e componentes (em ordem de leitura):
+Input Field – Introduzir componente
+Campo de texto livre para descrever o componente.
+Leitor de tela: “Campo de texto. Introduza o componente.”
+Select Box – Constituintes
+Escolha (“Lista de Texto da tabela constituintes”).
+Leitor de tela: “Campo de seleção. Escolha os constituintes do componente.”
+Select Box – Acessórios
+Escolha (“Lista de Texto da tabela Acessórios”)
+Leitor de tela: “Campo de seleção. Escolha os acessórios.”
+Select Box – Acabamentos
+Escolha (“Lista de Texto da tabela Acabamentos”).
+Leitor de tela: “Campo de seleção. Escolha o tipo de acabamento.”
+Select Box – Protótipo Comercial
+Escolha (“Lista de Itens(cano pvc, barra de ferro 20x30) com diferentes marcas (ex:gravia, tigre) da tabela Protótipo Comercial”)
+Leitor de tela: “Campo de seleção. Escolha o protótipo comercial.”
+Select Box – Aplicações
+Permite selecionar o tipo de aplicação ou uso do componente (ex.: infraestrutura, acabamento, elétrica) de uma tabela chamada Aplicações, quando selecionada deve aparecer como bullet points no caderno.
+Leitor de tela: “Campo de seleção. Escolha a aplicação do componente.”
+Scroll bar (direita): aparece quando o conteúdo excede a área visível.
+ 
+4) Botões de ação (lado direito)
+Salvar (Save)
+Cor: preto #000000
+Função: salva os arquivos enviados e associa ao registro da ESP.
+Leitor de tela: “Botão Salvar — grava os arquivos enviados.”
+Atualizar
+Cor: preto #000000
+Função: Recarregar listas.
+Leitor de tela: “Botão Atualizar — limpa ou recarrega os campos.”
+Abrir PDF
+Cor: preto #000000
+Função: abre o PDF consolidado do projeto ou gera uma visualização do documento técnico.
+Leitor de tela: “Botão Abrir PDF — gera ou abre o arquivo PDF da ESP.”
