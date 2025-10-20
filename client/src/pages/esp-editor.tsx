@@ -77,6 +77,7 @@ export default function EspEditor() {
   const { toast } = useToast();
   const user = getAuthUser();
   const [numConstituintesExecucao, setNumConstituintesExecucao] = useState(5);
+  const [numFichasReferencia, setNumFichasReferencia] = useState(1);
 
   // Sync active tab with URL
   useEffect(() => {
@@ -174,6 +175,12 @@ export default function EspEditor() {
         constituintesExecucaoIds: esp.constituintesExecucaoIds || [],
         fichasReferenciaIds: esp.fichasReferenciaIds || [],
       }, { keepDefaultValues: false });
+      
+      // Sync UI state with loaded data
+      const execucaoIds = esp.constituintesExecucaoIds || [];
+      const fichasIds = esp.fichasReferenciaIds || [];
+      setNumConstituintesExecucao(Math.max(5, execucaoIds.length));
+      setNumFichasReferencia(Math.max(1, fichasIds.length));
     }
   }, [esp]);
 
@@ -1191,17 +1198,120 @@ export default function EspEditor() {
             )}
 
             {activeTab === "fichas" && (
-              <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Fichas de Referência</h1>
-                <div>
-                  <Label htmlFor="fichas-referencia">Conteúdo</Label>
-                  <Textarea
-                    id="fichas-referencia"
-                    data-testid="textarea-fichas"
-                    className="mt-1 min-h-[300px]"
-                    placeholder="Adicione as fichas de referência..."
-                    {...form.register("fichasReferencia")}
-                  />
+              <div className="flex flex-col h-full">
+                {/* Cabeçalho com título e botões de ação */}
+                <div className="flex items-center justify-between pb-4 border-b">
+                  <h1 className="text-2xl font-bold text-black">Fichas de Referência</h1>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSave}
+                      data-testid="button-save-fichas"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Salvar — grava os arquivos enviados."
+                    >
+                      <Save className="h-4 w-4" />
+                      Salvar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/esp", espId] });
+                        toast({ title: "Dados atualizados" });
+                      }}
+                      data-testid="button-refresh-fichas"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Atualizar — recarregar as listas de banco de dados."
+                    >
+                      <Loader2 className="h-4 w-4" />
+                      Atualizar
+                    </Button>
+                    <Button
+                      onClick={handleExportPDF}
+                      disabled={isNewEsp}
+                      data-testid="button-open-pdf-fichas"
+                      className="gap-2 text-white hover:opacity-90"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Abrir PDF — gera ou abre o arquivo PDF da ESP."
+                    >
+                      <FileText className="h-4 w-4" />
+                      Abrir PDF
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Área principal do formulário com scroll */}
+                <div className="flex-1 overflow-auto max-w-4xl space-y-6 pr-4 mt-6">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Selecione os itens de outros catálogos que deseja relacionar. Use o botão "+" para adicionar mais itens.
+                  </p>
+
+                  {/* Lista dinâmica de itens de fichas de referência */}
+                  {Array.from({ length: numFichasReferencia }).map((_, index) => {
+                    const currentFichas = form.watch("fichasReferenciaIds") || [];
+                    return (
+                      <div key={index} className="flex gap-3 items-start">
+                        <div className="flex-1">
+                          <Label htmlFor={`ficha-${index}`} className="text-black">
+                            Item {index + 1}
+                          </Label>
+                          <Select
+                            value={currentFichas[index] || ""}
+                            onValueChange={(value) => {
+                              const updated = [...currentFichas];
+                              updated[index] = value;
+                              form.setValue("fichasReferenciaIds", updated, { shouldDirty: true });
+                            }}
+                          >
+                            <SelectTrigger
+                              id={`ficha-${index}`}
+                              data-testid={`select-ficha-referencia-${index}`}
+                              className="mt-1 bg-white text-black border-gray-300"
+                              aria-label="Campo de seleção. Escolha o item que quer relacionar"
+                            >
+                              <SelectValue placeholder={`Escolha o item ${index + 1}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="temp-loading">Carregando...</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {index >= 1 && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              const currentFichas = form.getValues("fichasReferenciaIds") || [];
+                              const updated = currentFichas.filter((_, i) => i !== index);
+                              form.setValue("fichasReferenciaIds", updated, { shouldDirty: true });
+                              setNumFichasReferencia(prev => prev - 1);
+                            }}
+                            className="mt-7"
+                            data-testid={`button-remove-ficha-${index}`}
+                            aria-label={`Remover item ${index + 1}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Botão para adicionar novo item */}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setNumFichasReferencia(prev => prev + 1);
+                      const current = form.getValues("fichasReferenciaIds") || [];
+                      form.setValue("fichasReferenciaIds", [...current, ""], { shouldDirty: true });
+                    }}
+                    className="gap-2"
+                    data-testid="button-add-ficha-referencia"
+                    aria-label="Adicionar novo item de ficha de referência"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Adicionar Item
+                  </Button>
                 </div>
               </div>
             )}
