@@ -62,6 +62,7 @@ const espFormSchema = z.object({
   acabamentosIds: z.array(z.string()).optional(),
   prototiposIds: z.array(z.string()).optional(),
   aplicacoesIds: z.array(z.string()).optional(),
+  constituintesExecucaoIds: z.array(z.string()).optional(),
 });
 
 type EspFormData = z.infer<typeof espFormSchema>;
@@ -137,6 +138,7 @@ export default function EspEditor() {
       acabamentosIds: [],
       prototiposIds: [],
       aplicacoesIds: [],
+      constituintesExecucaoIds: [],
     },
   });
 
@@ -166,6 +168,7 @@ export default function EspEditor() {
         acabamentosIds: esp.acabamentosIds || [],
         prototiposIds: esp.prototiposIds || [],
         aplicacoesIds: esp.aplicacoesIds || [],
+        constituintesExecucaoIds: esp.constituintesExecucaoIds || [],
       }, { keepDefaultValues: false });
     }
   }, [esp]);
