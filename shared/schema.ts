@@ -175,6 +175,8 @@ export const esps = pgTable("esps", {
   acabamentosIds: text("acabamentos_ids").array(),
   prototiposIds: text("prototipos_ids").array(),
   aplicacoesIds: text("aplicacoes_ids").array(),
+  // Novos campos para Execução
+  constituintesExecucaoIds: text("constituintes_execucao_ids").array(), // Array de IDs de constituintes para execução
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

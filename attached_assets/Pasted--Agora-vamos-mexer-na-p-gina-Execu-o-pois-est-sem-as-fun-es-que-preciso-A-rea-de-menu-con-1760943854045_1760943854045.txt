@@ -1,0 +1,44 @@
+
+ Agora vamos mexer na página "Execução", pois está sem as funções que preciso.
+A área de menu continua o mesmo
+o cabeçalho continua o mesmo
+o que mudar:
+Área principal — Itens de Execução
+Área central ( ao lado direito do menu) dedicada aos itens relacionados à execução dos componentes.
+ Os campos aparecem em formato de listas suspensas (Select Boxes), permitindo selecionar critérios técnicos ou etapas específicas.
+Estrutura dos campos (em ordem de leitura):
+Select Box – Constituinte 1
+Define o primeiro item de controle técnico da execução.
+Leitor de tela: “Campo de seleção. Escolha o primeiro item de controle de execução.”
+Select Box – Constituinte 2
+Segunda opção de item ou requisito de execução.
+Leitor de tela: “Campo de seleção. Escolha o segundo item de controle de execução.”
+Select Box – Constituinte 3
+Terceiro item ou detalhe técnico da execução.
+Leitor de tela: “Campo de seleção. Escolha o terceiro item de controle de execução.”
+Select Box – Constituinte 4
+Quarto item relacionado à execução.
+Leitor de tela: “Campo de seleção. Escolha o quarto item de controle de execução.”
+Select Box – Constituinte 5
+Quinto e último item exibido nesta tela.
+Leitor de tela: “Campo de seleção. Escolha o quinto item de controle de execução.”
+*Terá um “+” dando a opção de adicionar novos constituintes, é um aba com lista dinâmica.
+Scroll bar (à direita): visível quando o conteúdo ultrapassa o tamanho da área principal, permitindo rolagem vertical.
+ 
+4) Botões de ação (lado direito)
+Localizados verticalmente à direita da tela.
+Salvar (Save)
+Cor: preto #000000
+Função: salva os arquivos enviados e associa ao registro da ESP.
+Leitor de tela: “Botão Salvar — grava os arquivos enviados.”
+Atualizar
+Cor: preto #000000
+Função: Recarregar listas.
+Leitor de tela: “Botão Atualizar — limpa ou recarrega os campos.”
+Abrir PDF
+Cor: preto #000000
+Função: abre o PDF consolidado do projeto ou gera uma visualização do documento técnico.
+Leitor de tela: “Botão Abrir PDF — gera ou abre o arquivo PDF da ESP.”
+
+
+
