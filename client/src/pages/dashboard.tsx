@@ -146,7 +146,7 @@ export default function Dashboard() {
             </Button>
           </Link>
           
-          <Link href="/caderno/novo">
+          <Link href="/esp/novo">
             <Button
               variant="default"
               className="gap-2 bg-institutional-blue hover:bg-institutional-blue/90"
