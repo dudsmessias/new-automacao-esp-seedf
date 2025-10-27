@@ -1483,17 +1483,127 @@ export default function EspEditor() {
             )}
 
             {activeTab === "servicos" && (
-              <div className="max-w-4xl space-y-6">
-                <h1 className="text-2xl font-bold">Serviços Incluídos</h1>
-                <div>
-                  <Label htmlFor="servicos-incluidos">Conteúdo</Label>
-                  <Textarea
-                    id="servicos-incluidos"
-                    data-testid="textarea-servicos"
-                    className="mt-1 min-h-[300px]"
-                    placeholder="Liste os serviços incluídos..."
-                    {...form.register("servicosIncluidos")}
-                  />
+              <div className="h-full flex flex-col">
+                {/* Header */}
+                <div className="mb-6">
+                  <h1 className="text-2xl font-bold text-black">Serviços Incluídos</h1>
+                </div>
+
+                {/* Layout: Área principal à esquerda + Botões verticais à direita */}
+                <div className="flex-1 flex gap-6 overflow-hidden">
+                  {/* Área principal do formulário com scroll */}
+                  <div className="flex-1 overflow-auto space-y-6 pr-4">
+                    {/* Select Boxes dinâmicos para Serviços Incluídos */}
+                    {Array.from({ length: numServicosIncluidos }).map((_, index) => {
+                      const servicosIncluidosIds = form.watch("servicosIncluidosIds") || [];
+                      return (
+                        <div key={index} className="flex items-end gap-2">
+                          <div className="flex-1">
+                            <Label htmlFor={`servico-incluido-${index}`} className="text-black">
+                              Serviço {index + 1}
+                            </Label>
+                            <Select
+                              value={servicosIncluidosIds[index] || ""}
+                              onValueChange={(value) => {
+                                const current = form.getValues("servicosIncluidosIds") || [];
+                                const updated = [...current];
+                                updated[index] = value;
+                                form.setValue("servicosIncluidosIds", updated, { shouldDirty: true });
+                              }}
+                            >
+                              <SelectTrigger 
+                                id={`servico-incluido-${index}`}
+                                className="mt-1"
+                                data-testid={`select-servico-incluido-${index}`}
+                                aria-label="Campo de seleção. Escolha o serviço incluído vinculado ao componente."
+                              >
+                                <SelectValue placeholder={`Escolha o serviço ${index + 1}`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {servicosIncluidosData?.servicosIncluidos?.map((servico: { id: string; nome: string }) => (
+                                  <SelectItem key={servico.id} value={servico.id}>
+                                    {servico.nome}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {index >= 1 && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                setNumServicosIncluidos(prev => prev - 1);
+                                const current = form.getValues("servicosIncluidosIds") || [];
+                                form.setValue("servicosIncluidosIds", current.filter((_, i) => i !== index), { shouldDirty: true });
+                              }}
+                              className="gap-2 text-destructive hover:text-destructive"
+                              data-testid={`button-remove-servico-incluido-${index}`}
+                              aria-label={`Remover serviço ${index + 1}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Botão para adicionar novo serviço */}
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setNumServicosIncluidos(prev => prev + 1);
+                        const current = form.getValues("servicosIncluidosIds") || [];
+                        form.setValue("servicosIncluidosIds", [...current, ""], { shouldDirty: true });
+                      }}
+                      className="gap-2"
+                      data-testid="button-add-servico-incluido"
+                      aria-label="Adicionar novo serviço incluído"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar Serviço
+                    </Button>
+                  </div>
+
+                  {/* Botões de ação verticais no lado direito */}
+                  <div className="flex flex-col gap-3 w-48">
+                    <Button
+                      onClick={handleSave}
+                      disabled={updateMutation.isPending}
+                      data-testid="button-save-servicos"
+                      className="gap-2 text-white hover:opacity-90 w-full justify-start"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Salvar — grava os serviços incluídos."
+                    >
+                      <Save className="h-4 w-4" />
+                      Salvar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/esp", espId] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/catalog/servicos-incluidos"] });
+                        toast({ title: "Dados atualizados" });
+                      }}
+                      data-testid="button-refresh-servicos"
+                      className="gap-2 text-white hover:opacity-90 w-full justify-start"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Atualizar — recarrega os campos."
+                    >
+                      <Loader2 className="h-4 w-4" />
+                      Atualizar
+                    </Button>
+                    <Button
+                      onClick={handleExportPDF}
+                      disabled={isNewEsp}
+                      data-testid="button-open-pdf-servicos"
+                      className="gap-2 text-white hover:opacity-90 w-full justify-start"
+                      style={{ backgroundColor: "#000000" }}
+                      aria-label="Botão Abrir PDF — gera ou abre o arquivo PDF da ESP."
+                    >
+                      <FileText className="h-4 w-4" />
+                      Abrir PDF
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
