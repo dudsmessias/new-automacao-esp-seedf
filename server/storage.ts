@@ -246,6 +246,7 @@ export class DatabaseStorage implements IStorage {
       constituintesExecucaoIds: insertEsp.constituintesExecucaoIds ?? null,
       fichasReferenciaIds: insertEsp.fichasReferenciaIds ?? null,
       fichasRecebimentoIds: insertEsp.fichasRecebimentoIds ?? null,
+      servicosIncluidosIds: insertEsp.servicosIncluidosIds ?? null,
       createdAt: now,
       updatedAt: now,
     };
@@ -281,6 +282,7 @@ export class DatabaseStorage implements IStorage {
     if (updates.constituintesExecucaoIds !== undefined) updateData.constituintesExecucaoIds = updates.constituintesExecucaoIds;
     if (updates.fichasReferenciaIds !== undefined) updateData.fichasReferenciaIds = updates.fichasReferenciaIds;
     if (updates.fichasRecebimentoIds !== undefined) updateData.fichasRecebimentoIds = updates.fichasRecebimentoIds;
+    if (updates.servicosIncluidosIds !== undefined) updateData.servicosIncluidosIds = updates.servicosIncluidosIds;
     
     await db.update(esps).set(updateData).where(eq(esps.id, id));
     return this.getEsp(id);

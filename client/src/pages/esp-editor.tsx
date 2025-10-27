@@ -217,10 +217,12 @@ export default function EspEditor() {
       const fichasIds = esp.fichasReferenciaIds || [];
       const recebimentoIds = esp.fichasRecebimentoIds || [];
       const servicosIds = esp.servicosIncluidosIds || [];
+      console.log("ESP loaded - servicosIncluidosIds:", esp.servicosIncluidosIds, "length:", servicosIds.length);
       setNumConstituintesExecucao(Math.max(5, execucaoIds.length));
       setNumFichasReferencia(Math.max(1, fichasIds.length));
       setNumFichasRecebimento(Math.max(1, recebimentoIds.length));
       setNumServicosIncluidos(Math.max(1, servicosIds.length));
+      console.log("Set numServicosIncluidos to:", Math.max(1, servicosIds.length));
     }
   }, [esp]);
 
@@ -236,6 +238,8 @@ export default function EspEditor() {
       if (isNewEsp && !bodyData.cadernoId && cadernosData?.cadernos?.[0]?.id) {
         bodyData.cadernoId = cadernosData.cadernos[0].id;
       }
+      
+      console.log("Saving ESP - servicosIncluidosIds:", bodyData.servicosIncluidosIds);
       
       const response = await fetch(url, {
         method,

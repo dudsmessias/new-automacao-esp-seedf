@@ -43,6 +43,19 @@ The design adheres strictly to the official SEEDF visual identity, utilizing a t
 
 ## Recent Development Notes
 
+### Serviços Incluídos Tab Implementation (October 2025)
+-   **Feature:** Catalog-based service selection system for managing included services in ESP specifications.
+-   **Implementation:**
+    -   New `servicos_incluidos` catalog table with 11 example services (Instalação do Componente, Montagem do Equipamento, Ajuste e Nivelamento, etc.)
+    -   New `servicosIncluidosIds` text array field in ESP table
+    -   Dynamic UI with initially 1 select box, expandable via "+" button
+    -   Action buttons (Salvar, Atualizar, Abrir PDF) with institutional black (#000000) background
+    -   `numServicosIncluidos` state controls UI rendering
+-   **API Route:** GET /api/catalog/servicos-incluidos
+-   **Backend:** Added servicosIncluidosIds to both createEsp (line 252) and updateEsp (line 287) in storage.ts
+-   **State synchronization:** `setNumServicosIncluidos(Math.max(1, servicosIds.length))` ensures saved services display correctly when editing existing ESPs
+-   **Known Issue:** Bug discovered during E2E testing where save operation does not trigger network request - investigation ongoing
+
 ### Recebimento Tab Implementation (October 2025)
 -   **Feature:** Catalog-based ficha selection system for managing reception criteria and inspection documents.
 -   **Implementation:**
