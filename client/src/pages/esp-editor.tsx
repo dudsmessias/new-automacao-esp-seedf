@@ -65,6 +65,7 @@ const espFormSchema = z.object({
   constituintesExecucaoIds: z.array(z.string()).optional(),
   fichasReferenciaIds: z.array(z.string()).optional(),
   fichasRecebimentoIds: z.array(z.string()).optional(),
+  servicosIncluidosIds: z.array(z.string()).optional(),
 });
 
 type EspFormData = z.infer<typeof espFormSchema>;
@@ -80,6 +81,7 @@ export default function EspEditor() {
   const [numConstituintesExecucao, setNumConstituintesExecucao] = useState(5);
   const [numFichasReferencia, setNumFichasReferencia] = useState(1);
   const [numFichasRecebimento, setNumFichasRecebimento] = useState(1);
+  const [numServicosIncluidos, setNumServicosIncluidos] = useState(1);
 
   // Sync active tab with URL
   useEffect(() => {
@@ -133,6 +135,20 @@ export default function EspEditor() {
     },
   });
 
+  // Fetch Servicos Incluidos catalog data
+  const { data: servicosIncluidosData } = useQuery({
+    queryKey: ["/api/catalog/servicos-incluidos"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/catalog/servicos-incluidos", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar serviços incluídos");
+      return response.json();
+    },
+  });
+
   // Form setup
   const form = useForm<EspFormData>({
     resolver: zodResolver(espFormSchema),
@@ -160,6 +176,7 @@ export default function EspEditor() {
       constituintesExecucaoIds: [],
       fichasReferenciaIds: [],
       fichasRecebimentoIds: [],
+      servicosIncluidosIds: [],
     },
   });
 
@@ -192,15 +209,18 @@ export default function EspEditor() {
         constituintesExecucaoIds: esp.constituintesExecucaoIds || [],
         fichasReferenciaIds: esp.fichasReferenciaIds || [],
         fichasRecebimentoIds: esp.fichasRecebimentoIds || [],
+        servicosIncluidosIds: esp.servicosIncluidosIds || [],
       }, { keepDefaultValues: false });
       
       // Sync UI state with loaded data
       const execucaoIds = esp.constituintesExecucaoIds || [];
       const fichasIds = esp.fichasReferenciaIds || [];
       const recebimentoIds = esp.fichasRecebimentoIds || [];
+      const servicosIds = esp.servicosIncluidosIds || [];
       setNumConstituintesExecucao(Math.max(5, execucaoIds.length));
       setNumFichasReferencia(Math.max(1, fichasIds.length));
       setNumFichasRecebimento(Math.max(1, recebimentoIds.length));
+      setNumServicosIncluidos(Math.max(1, servicosIds.length));
     }
   }, [esp]);
 
