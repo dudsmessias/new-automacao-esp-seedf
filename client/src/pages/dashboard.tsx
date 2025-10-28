@@ -135,7 +135,7 @@ export default function Dashboard() {
             Visualizar Histórico
           </Button>
           
-          <Link href="/esp/novo">
+          <Link href="/criacao-itens">
             <Button
               variant="outline"
               className="gap-2"
