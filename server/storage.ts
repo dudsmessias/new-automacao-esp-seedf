@@ -554,12 +554,8 @@ export class DatabaseStorage implements IStorage {
       id,
       titulo: insertItem.titulo,
       categoria: insertItem.categoria as CategoriaItem,
-      codigoReferencia: insertItem.codigoReferencia ?? null,
-      descricaoTecnico: insertItem.descricaoTecnico ?? null,
-      especificacoes: insertItem.especificacoes ?? null,
-      caracteristicasTecnicas: insertItem.caracteristicasTecnicas ?? null,
-      normasReferencias: insertItem.normasReferencias ?? null,
-      aplicacao: insertItem.aplicacao ?? null,
+      subcategoria: insertItem.subcategoria as any,
+      descricao: insertItem.descricao,
       ativo: insertItem.ativo ?? true,
       createdAt: now,
       updatedAt: now,
@@ -571,9 +567,6 @@ export class DatabaseStorage implements IStorage {
   async updateItemEspecificacao(id: string, updates: Partial<InsertItemEspecificacao>): Promise<ItemEspecificacao | undefined> {
     const now = new Date();
     const updateData: any = { ...updates, updatedAt: now };
-    if (updateData.categoria) {
-      updateData.categoria = updateData.categoria as CategoriaItem;
-    }
     await db.update(itensEspecificacao)
       .set(updateData)
       .where(eq(itensEspecificacao.id, id));

@@ -1,0 +1,76 @@
+ATUALIZAR PÁGINA “Criação de Itens e Especificações Técnicas”
+
+Objetivo
+Atualizar a página para conter apenas os campos centrais listados abaixo.
+Remover todas as outras seções, componentes ou textos do corpo da página.
+Manter inalterados: cabeçalho, scroll bar à direita e os botões Salvar, Atualizar e Abrir PDF, com a mesma aparência, posição e função originais.
+
+Área central da página
+
+Input Field — Título do Item
+
+Função: definir o título ou nome identificador do novo item.
+
+Acessibilidade (leitor de tela): “Campo de texto. Digite o nome do item a ser criado.”
+
+Obrigatório: sim.
+
+Select Box — Categoria
+
+Função: selecionar a categoria principal em que o item será inserido.
+
+Opções exatas: “DESCRIÇÃO”, “APLICAÇÃO”, “EXECUÇÃO”, “FICHA DE REFERÊNCIA”, “RECEBIMENTO”, “SERVIÇOS INCLUÍDOS NOS PREÇOS”, “CRITÉRIOS DE MEDIÇÃO”, “LEGISLAÇÃO”, “REFERÊNCIA”.
+
+Acessibilidade: “Campo de seleção. Escolha a categoria do item.”
+
+Obrigatório: sim.
+
+Select Box — Subcategorias
+
+Função: exibir os subitens referentes à categoria selecionada.
+
+Acessibilidade: “Campo de seleção. Escolha um item existente para referência.”
+
+Comportamento: opções dependentes da Categoria selecionada.
+
+Mapeamento de exemplo:
+
+Se Categoria = “DESCRIÇÃO”: opções “Acessórios”, “Acabamentos”, “Constituintes”, “Protótipo Comercial”, “Texto Geral”.
+
+Se Categoria = “FICHA DE REFERÊNCIA”: opções “Catálogo de Serviços”, “Texto Geral”.
+
+Para as demais categorias, manter sem opções até definição futura.
+
+Obrigatório: sim.
+
+Input Field — Descrição
+
+Função: inserir o resumo geral do item.
+
+Acessibilidade: “Campo de texto. Informe a descrição do item.”
+
+Obrigatório: sim.
+
+Modo: campo multilinha com crescimento vertical automático.
+
+Regras adicionais
+
+Não adicionar mais campos, textos, tabelas, listas ou painéis na área central.
+
+Validar campos obrigatórios antes de permitir o salvamento.
+
+Após salvar, manter o mesmo comportamento atual dos botões e do fluxo da página.
+
+O padrão visual e responsivo deve seguir o estilo atual da aplicação.
+
+Integração com banco de dados
+
+Atenção: esta página deve alimentar diretamente o banco de dados utilizado no módulo “Criação de Cadernos”, garantindo que os novos itens e especificações cadastrados estejam imediatamente disponíveis para uso nesse módulo.
+
+Manter inalterado
+
+Cabeçalho padrão do sistema.
+
+Scroll bar padrão à direita.
+
+Botões “Salvar”, “Atualizar” e “Abrir PDF” (sem alteração de cor, ícone, rótulo, posição ou função).

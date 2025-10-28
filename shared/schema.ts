@@ -183,11 +183,28 @@ export type ServicoIncluido = typeof servicosIncluidos.$inferSelect;
 
 // Categorias de itens técnicos
 export enum CategoriaItem {
-  ELETRICA = "ELETRICA",
-  HIDROSSANITARIO = "HIDROSSANITARIO",
-  ACABAMENTOS = "ACABAMENTOS",
-  ESTRUTURA = "ESTRUTURA",
-  OUTROS = "OUTROS"
+  DESCRICAO = "DESCRIÇÃO",
+  APLICACAO = "APLICAÇÃO",
+  EXECUCAO = "EXECUÇÃO",
+  FICHA_DE_REFERENCIA = "FICHA DE REFERÊNCIA",
+  RECEBIMENTO = "RECEBIMENTO",
+  SERVICOS_INCLUIDOS = "SERVIÇOS INCLUÍDOS NOS PREÇOS",
+  CRITERIOS_MEDICAO = "CRITÉRIOS DE MEDIÇÃO",
+  LEGISLACAO = "LEGISLAÇÃO",
+  REFERENCIA = "REFERÊNCIA"
+}
+
+// Subcategorias (dependentes da categoria selecionada)
+export enum SubcategoriaItem {
+  // Subcategorias para DESCRIÇÃO
+  ACESSORIOS = "Acessórios",
+  ACABAMENTOS = "Acabamentos",
+  CONSTITUINTES = "Constituintes",
+  PROTOTIPO_COMERCIAL = "Protótipo Comercial",
+  // Subcategorias para FICHA DE REFERÊNCIA
+  CATALOGO_SERVICOS = "Catálogo de Serviços",
+  // Subcategoria geral
+  TEXTO_GERAL = "Texto Geral"
 }
 
 // Itens e Especificações Técnicas
@@ -195,12 +212,8 @@ export const itensEspecificacao = pgTable("itens_especificacao", {
   id: varchar("id", { length: 36 }).primaryKey(),
   titulo: text("titulo").notNull(),
   categoria: text("categoria").notNull().$type<CategoriaItem>(),
-  codigoReferencia: text("codigo_referencia"), // Referência a outro item existente
-  descricaoTecnico: text("descricao_tecnico"),
-  especificacoes: text("especificacoes"),
-  caracteristicasTecnicas: text("caracteristicas_tecnicas"),
-  normasReferencias: text("normas_referencias"),
-  aplicacao: text("aplicacao"),
+  subcategoria: text("subcategoria").notNull().$type<SubcategoriaItem>(),
+  descricao: text("descricao").notNull(),
   ativo: boolean("ativo").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
