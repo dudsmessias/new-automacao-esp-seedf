@@ -5,6 +5,9 @@ import { insertItemEspecificacaoSchema, CategoriaItem } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 
+// Schema for partial updates (PATCH)
+const updateItemEspecificacaoSchema = insertItemEspecificacaoSchema.partial();
+
 const router = Router();
 
 // GET /api/itens-especificacao - List all itens técnicos com filtros
@@ -61,7 +64,14 @@ router.patch("/:id", authenticateToken, async (req: AuthRequest, res) => {
       return res.status(404).json({ error: "Item não encontrado" });
     }
     
-    const item = await storage.updateItemEspecificacao(req.params.id, req.body);
+    // Validate update payload with partial schema
+    const parsed = updateItemEspecificacaoSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const errorMessage = fromZodError(parsed.error).toString();
+      return res.status(400).json({ error: errorMessage });
+    }
+    
+    const item = await storage.updateItemEspecificacao(req.params.id, parsed.data);
     res.json({ item });
   } catch (error) {
     res.status(500).json({ error: "Erro ao atualizar item técnico" });
