@@ -43,29 +43,47 @@ The design adheres strictly to the official SEEDF visual identity, utilizing a t
 
 ## Recent Development Notes
 
-### Criação de Itens e Especificações Técnicas Page (October 28, 2025)
--   **Feature:** Standalone page for creating and managing technical items that can be referenced in ESP specifications.
--   **Data Model:** New `itens_especificacao` table with enum `CategoriaItem` (ELETRICA, HIDROSSANITARIO, ACABAMENTOS, ESTRUTURA, OUTROS)
-    -   Fields: id, titulo (required), categoria (required), codigoReferencia (optional - references other items), descricaoTecnico, especificacoes, caracteristicasTecnicas, normasReferencias, aplicacao, ativo (soft-delete)
+### Criação de Itens e Especificações Técnicas Page - Updated (October 28, 2025)
+-   **Feature:** Standalone page for creating and managing technical items that feed directly into the ESP catalog system.
+-   **Data Model:** Simplified `itens_especificacao` table with 4 core fields
+    -   **CategoriaItem enum (9 options):** DESCRIÇÃO, APLICAÇÃO, EXECUÇÃO, FICHA DE REFERÊNCIA, RECEBIMENTO, SERVIÇOS INCLUÍDOS NOS PREÇOS, CRITÉRIOS DE MEDIÇÃO, LEGISLAÇÃO, REFERÊNCIA
+    -   **SubcategoriaItem enum (6 options):** ACESSORIOS, ACABAMENTOS, CONSTITUINTES, PROTOTIPO_COMERCIAL, CATALOGO_SERVICOS, TEXTO_GERAL
+    -   **Fields:** id, titulo (required), categoria (required), subcategoria (required - dependent on categoria), descricao (required multilinha), ativo (soft-delete), timestamps
 -   **Backend Implementation:**
     -   Storage methods: createItemEspecificacao, getItensEspecificacao (with optional filters categoria/ativo), updateItemEspecificacao, deleteItemEspecificacao (soft-delete)
     -   API Routes: GET/POST/PATCH/DELETE at /api/itens-especificacao with JWT authentication
-    -   Zod validation: insertItemEspecificacaoSchema for POST, partial schema (updateItemEspecificacaoSchema) for PATCH
--   **Frontend Implementation:**
+    -   Zod validation: insertItemEspecificacaoSchema for POST, partial schema for PATCH
+-   **Frontend Implementation (4 campos apenas):**
+    -   **Campo 1:** Título do Item (input text, obrigatório, h-11)
+    -   **Campo 2:** Categoria (select, obrigatório, 9 opções, h-11)
+    -   **Campo 3:** Subcategorias (select, obrigatório, dependente da categoria selecionada, h-11)
+        -   DESCRIÇÃO → 5 subcategorias (Acessórios, Acabamentos, Constituintes, Protótipo Comercial, Texto Geral)
+        -   FICHA DE REFERÊNCIA → 2 subcategorias (Catálogo de Serviços, Texto Geral)
+        -   Demais categorias → campo desabilitado, usa TEXTO_GERAL como padrão
+    -   **Campo 4:** Descrição (textarea multilinha, obrigatório, rows=6)
     -   Route: /criacao-itens accessible via "+ Criação de Itens" button in dashboard
-    -   AuthHeader pattern: Official GDF branding with institutional blue/yellow colors
+    -   AuthHeader pattern: Official GDF branding (unchanged)
     -   Two-column layout: Form fields on left (scrollable), action buttons on right (w-48, fixed)
-    -   Form fields with larger sizes: h-11 for inputs, rows=6 for textareas (avoiding mobile appearance)
-    -   Fields arranged in responsive grid: Título/Categoria (2 cols), Código/Identificação (full width), Descrição/Especificações (2 cols), Características/Normas (2 cols), Aplicação (full width)
-    -   Action buttons in vertical stack with black background (#000000): Salvar, Atualizar, Abrir PDF
+    -   Action buttons with black background (#000000): Salvar, Atualizar, Abrir PDF (unchanged)
     -   React Hook Form + Zod using shared schema from @shared/schema.ts
     -   TanStack Query for mutations with cache invalidation
+-   **Dependent Subcategorias Logic:**
+    -   useEffect hook watches categoria changes
+    -   Automatically updates available subcategorias based on selected categoria
+    -   Sets first subcategoria when available, or defaults to TEXTO_GERAL for categorias without subcategorias
+    -   Prevents inconsistent data pairs (e.g., categoria=APLICAÇÃO with subcategoria=Constituintes)
+-   **Database Migration:**
+    -   Manual SQL migration executed to add subcategoria and descricao columns
+    -   Removed 6 legacy columns: codigoReferencia, descricaoTecnico, especificacoes, caracteristicasTecnicas, normasReferencias, aplicacao
+    -   Existing data (2 records) migrated with default values
 -   **Bug Fixes:**
-    -   Removed empty value SelectItem (Radix UI requirement - no empty string values allowed)
-    -   Fixed apiRequest parameter order: correct is apiRequest(method, url, data) not apiRequest(url, method, data)
-    -   Added Zod validation to PATCH route using partial schema to prevent data integrity issues
--   **Testing:** E2E Playwright tests validate complete flow (login, navigation, form fill, multiple saves, toast notifications, form reset)
--   **Architect Review:** Implementation approved after PATCH validation fix
+    -   Critical: Fixed subcategoria persistence bug where switching to categorias without subcategorias left stale values
+    -   Solution: useEffect always sets subcategoria value (first option or TEXTO_GERAL fallback)
+-   **Testing:** 
+    -   E2E Playwright tests validate: 4 campos apenas, dependent subcategoria logic, form validation, creation flow, form reset
+    -   Bug fix test validates: switching between categorias with/without subcategorias, consistent API payloads
+-   **Architect Review:** Implementation approved after bug fix - ready for production
+-   **Integration:** Items created here feed directly into ESP catalog system for use in "Criação de Cadernos" module
 
 ### Serviços Incluídos Tab Implementation (October 2025)
 -   **Feature:** Catalog-based service selection system for managing included services in ESP specifications.
