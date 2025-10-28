@@ -1,0 +1,65 @@
+Página: Criação de Itens e Especificações Técnicas
+Objetivo:
+Página exclusiva acessada ao clicar no botão “+ Criação de Itens”.
+Serve para alimentar o banco de dados principal, utilizado pelo menu lateral da criação de novos cadernos.
+Descrição geral:
+Esta página permite ao usuário registrar novos itens técnicos e especificações detalhadas, que ficarão disponíveis para seleção e uso em outros módulos do sistema.
+Estrutura e Layout
+•	Cabeçalho:
+o	Mesmo padrão visual e funcional do restante do sistema.
+o	Contém o título, ícone de voltar, identificação do usuário e opções padrão (notificações e sair).
+•	Seções principais:
+1.	Input Field — Título do Item
+o	Função: definir o título ou nome identificador do novo item.
+o	Leitor de tela: “Campo de texto. Digite o nome do item a ser criado.”
+2.	Select Box — Categoria
+o	Função: permite selecionar a categoria principal em que o item será inserido.
+o	Exemplo: “Elétrica”, “Hidrossanitário”, “Acabamentos”, “Estrutura”.
+o	Leitor de tela: “Campo de seleção. Escolha a categoria do item.”
+3.	Select Box — Código/Identificação
+o	Função: exibe os itens existentes para referência, evitando duplicidades.
+o	Leitor de tela: “Campo de seleção. Escolha um item existente para referência.”
+4.	Input Field — Descrição Técnico
+o	Função: inserir o resumo geral do item.
+o	Leitor de tela: “Campo de texto. Informe a descrição do item.”
+5.	Input Field — Especificações
+o	Função: detalhar as informações técnicas do item.
+o	Leitor de tela: “Campo de texto. Digite as especificações técnicas do item.”
+6.	Input Field — Características Técnicas
+o	Função: listar propriedades físicas, dimensões e detalhes complementares.
+o	Leitor de tela: “Campo de texto. Informe as características técnicas do item.”
+7.	Input Field — Normas e Referências Aplicáveis
+o	Função: citar normas, manuais e referências técnicas relacionadas.
+o	Leitor de tela: “Campo de texto. Informe as normas e referências aplicáveis.”
+8.	Input Field — Aplicação
+o	Função: descrever onde e como o item será utilizado.
+o	Leitor de tela: “Campo de texto. Descreva a aplicação do item.”
+Scroll bar: localizada à direita da tela, aparece quando o conteúdo excede o espaço visível.
+4) Botões de ação (lado direito)
+1.	Salvar (Save)
+o	Cor: preto #000000
+o	Função: salva os arquivos enviados e associa ao registro da ESP.
+o	Leitor de tela: “Botão Salvar — grava os arquivos enviados.”
+2.	Atualizar 
+o	Cor: preto #000000
+o	Função: limpa a seleção de arquivos ou recarrega a tela.
+o	Leitor de tela: “Botão Atualizar — recarrega os campos.”
+3.	Abrir PDF
+o	Cor: preto #000000
+o	Função: abre o PDF consolidado do projeto ou gera uma visualização do documento técnico.
+o	Leitor de tela: “Botão Abrir PDF — gera ou abre o arquivo PDF da ESP.”
+Integração com Banco de Dados
+•	Origem: Tabela principal de itens e especificações técnicas.
+•	Relacionamento:
+o	Cada item pode ter várias especificações associadas.
+o	A página deve alimentar diretamente o banco utilizado no módulo Criação de Cadernos.
+Interações
+•	O botão “+ Criação de Itens” abre esta página.
+•	Após salvar um novo item, o usuário pode:
+o	Voltar ao menu principal.
+o	Criar outra especificação relacionada.
+o	Atualizar o banco de dados automaticamente.
+Observações adicionais
+•	Seguir o mesmo padrão visual e responsivo do restante do sistema.
+•	Incluir validações obrigatórias antes do envio.
+•	Exibir mensagem de sucesso/erro após salvar.

@@ -181,6 +181,40 @@ export const insertServicoIncluidoSchema = createInsertSchema(servicosIncluidos)
 export type InsertServicoIncluido = z.infer<typeof insertServicoIncluidoSchema>;
 export type ServicoIncluido = typeof servicosIncluidos.$inferSelect;
 
+// Categorias de itens técnicos
+export enum CategoriaItem {
+  ELETRICA = "ELETRICA",
+  HIDROSSANITARIO = "HIDROSSANITARIO",
+  ACABAMENTOS = "ACABAMENTOS",
+  ESTRUTURA = "ESTRUTURA",
+  OUTROS = "OUTROS"
+}
+
+// Itens e Especificações Técnicas
+export const itensEspecificacao = pgTable("itens_especificacao", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  titulo: text("titulo").notNull(),
+  categoria: text("categoria").notNull().$type<CategoriaItem>(),
+  codigoReferencia: text("codigo_referencia"), // Referência a outro item existente
+  descricaoTecnico: text("descricao_tecnico"),
+  especificacoes: text("especificacoes"),
+  caracteristicasTecnicas: text("caracteristicas_tecnicas"),
+  normasReferencias: text("normas_referencias"),
+  aplicacao: text("aplicacao"),
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertItemEspecificacaoSchema = createInsertSchema(itensEspecificacao).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertItemEspecificacao = z.infer<typeof insertItemEspecificacaoSchema>;
+export type ItemEspecificacao = typeof itensEspecificacao.$inferSelect;
+
 // ESP model
 export const esps = pgTable("esps", {
   id: varchar("id", { length: 36 }).primaryKey(),
