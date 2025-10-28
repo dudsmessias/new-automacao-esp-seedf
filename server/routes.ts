@@ -9,6 +9,7 @@ import exportRoutes from "./routes/export";
 import logsRoutes from "./routes/logs";
 import filesRoutes from "./routes/files";
 import catalogRoutes from "./routes/catalog";
+import itensEspecificacaoRoutes from "./routes/itens-especificacao";
 import { logger } from "./utils/logger";
 import { seedDatabase } from "./seed";
 
@@ -44,6 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/export", exportRoutes);
   app.use("/api/logs", logsRoutes);
   app.use("/api/catalog", catalogRoutes);
+  app.use("/api/itens-especificacao", itensEspecificacaoRoutes);
 
   // API documentation placeholder
   app.get("/api/docs", (req, res) => {

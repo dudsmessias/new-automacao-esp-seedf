@@ -553,7 +553,7 @@ export class DatabaseStorage implements IStorage {
     const values: ItemEspecificacao = {
       id,
       titulo: insertItem.titulo,
-      categoria: insertItem.categoria,
+      categoria: insertItem.categoria as CategoriaItem,
       codigoReferencia: insertItem.codigoReferencia ?? null,
       descricaoTecnico: insertItem.descricaoTecnico ?? null,
       especificacoes: insertItem.especificacoes ?? null,
@@ -570,8 +570,12 @@ export class DatabaseStorage implements IStorage {
 
   async updateItemEspecificacao(id: string, updates: Partial<InsertItemEspecificacao>): Promise<ItemEspecificacao | undefined> {
     const now = new Date();
+    const updateData: any = { ...updates, updatedAt: now };
+    if (updateData.categoria) {
+      updateData.categoria = updateData.categoria as CategoriaItem;
+    }
     await db.update(itensEspecificacao)
-      .set({ ...updates, updatedAt: now })
+      .set(updateData)
       .where(eq(itensEspecificacao.id, id));
     return this.getItemEspecificacao(id);
   }
