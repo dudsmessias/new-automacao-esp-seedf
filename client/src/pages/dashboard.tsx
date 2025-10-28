@@ -157,7 +157,7 @@ export default function Dashboard() {
             </Button>
           </Link>
           
-          <Link href="/esp/novo">
+          <Link href="/nova-esp">
             <Button
               variant="default"
               className="gap-2 bg-institutional-blue hover:bg-institutional-blue/90"

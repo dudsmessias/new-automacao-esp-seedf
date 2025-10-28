@@ -239,4 +239,74 @@ router.delete(
   }
 );
 
+// POST /api/esp/nova - Create ESP with multiple cadernos
+const novaEspSchema = z.object({
+  cadernosIds: z.array(z.string()).min(1, "Selecione pelo menos um caderno"),
+});
+
+router.post(
+  "/nova",
+  authenticateToken,
+  requireRole(...Permissions.createEsp),
+  validateBody(novaEspSchema),
+  async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Não autenticado" });
+      }
+
+      const { cadernosIds } = req.body;
+
+      // Validate all cadernos exist
+      const cadernos = await Promise.all(
+        cadernosIds.map((id: string) => storage.getCaderno(id))
+      );
+      
+      const missingCadernos = cadernos.filter(c => !c);
+      if (missingCadernos.length > 0) {
+        return res.status(404).json({ error: "Um ou mais cadernos não encontrados" });
+      }
+
+      // Get first caderno for basic ESP info
+      const primeiroCaderno = cadernos[0]!;
+      
+      // Generate unique codigo based on caderno title and timestamp
+      const timestamp = Date.now().toString().slice(-6);
+      const codigo = `ESP-${timestamp}`;
+
+      // Create ESP with multiple cadernos
+      const esp = await storage.createEsp({
+        codigo,
+        titulo: `ESP - ${primeiroCaderno.titulo}`,
+        tipologia: "Multi-Caderno",
+        revisao: "1.0",
+        dataPublicacao: new Date(),
+        autorId: req.user.id,
+        selo: Selo.NENHUM,
+        cadernoId: primeiroCaderno.id, // Keep first caderno for backward compatibility
+        cadernosIds, // Array of all caderno IDs
+        visivel: true,
+      });
+
+      await storage.createLog({
+        userId: req.user.id,
+        acao: "CRIAR_ESP_MULTI_CADERNO",
+        alvo: esp.id,
+        detalhes: `ESP "${esp.codigo}" criada com ${cadernosIds.length} cadernos`,
+      });
+
+      logger.info("Multi-caderno ESP created", { 
+        espId: esp.id, 
+        userId: req.user.id,
+        cadernosCount: cadernosIds.length 
+      });
+
+      res.status(201).json({ esp });
+    } catch (error) {
+      logger.error("Error creating multi-caderno ESP", { error });
+      res.status(500).json({ error: "Erro ao criar ESP" });
+    }
+  }
+);
+
 export default router;

@@ -238,7 +238,8 @@ export const esps = pgTable("esps", {
   dataPublicacao: timestamp("data_publicacao").notNull(),
   autorId: varchar("autor_id", { length: 36 }).notNull().references(() => users.id),
   selo: text("selo").notNull().$type<Selo>().default(Selo.NENHUM),
-  cadernoId: varchar("caderno_id", { length: 36 }).notNull().references(() => cadernos.id),
+  cadernoId: varchar("caderno_id", { length: 36 }).references(() => cadernos.id), // Optional for backward compatibility
+  cadernosIds: text("cadernos_ids").array(), // Array of caderno IDs for multi-caderno ESPs
   visivel: boolean("visivel").notNull().default(true),
   // Campos de conteúdo
   descricaoAplicacao: text("descricao_aplicacao"),

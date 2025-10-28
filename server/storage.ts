@@ -238,7 +238,8 @@ export class DatabaseStorage implements IStorage {
       dataPublicacao: insertEsp.dataPublicacao,
       autorId: insertEsp.autorId,
       selo: (insertEsp.selo ?? Selo.NENHUM) as Selo,
-      cadernoId: insertEsp.cadernoId,
+      cadernoId: insertEsp.cadernoId ?? null,
+      cadernosIds: insertEsp.cadernosIds ?? null,
       visivel: insertEsp.visivel ?? true,
       descricaoAplicacao: insertEsp.descricaoAplicacao ?? null,
       execucao: insertEsp.execucao ?? null,
@@ -275,6 +276,7 @@ export class DatabaseStorage implements IStorage {
     if (updates.autorId !== undefined) updateData.autorId = updates.autorId;
     if (updates.selo !== undefined) updateData.selo = updates.selo;
     if (updates.cadernoId !== undefined) updateData.cadernoId = updates.cadernoId;
+    if (updates.cadernosIds !== undefined) updateData.cadernosIds = updates.cadernosIds;
     if (updates.visivel !== undefined) updateData.visivel = updates.visivel;
     if (updates.descricaoAplicacao !== undefined) updateData.descricaoAplicacao = updates.descricaoAplicacao;
     if (updates.execucao !== undefined) updateData.execucao = updates.execucao;

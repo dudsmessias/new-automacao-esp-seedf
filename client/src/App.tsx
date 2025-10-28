@@ -14,6 +14,7 @@ import Dashboard from "@/pages/dashboard";
 import DashboardResults from "@/pages/dashboard-results";
 import EspEditor from "@/pages/esp-editor";
 import CriacaoItens from "@/pages/criacao-itens";
+import NovaEsp from "@/pages/nova-esp";
 
 function Router() {
   return (
@@ -44,6 +45,11 @@ function Router() {
       <Route path="/criacao-itens">
         <ProtectedRoute>
           <CriacaoItens />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/nova-esp">
+        <ProtectedRoute>
+          <NovaEsp />
         </ProtectedRoute>
       </Route>
       
