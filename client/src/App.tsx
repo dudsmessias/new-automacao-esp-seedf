@@ -13,6 +13,7 @@ import Loading from "@/pages/loading";
 import Dashboard from "@/pages/dashboard";
 import DashboardResults from "@/pages/dashboard-results";
 import EspEditor from "@/pages/esp-editor";
+import CriacaoItens from "@/pages/criacao-itens";
 
 function Router() {
   return (
@@ -38,6 +39,11 @@ function Router() {
       <Route path="/esp/:id/:tab?">
         <ProtectedRoute>
           <EspEditor />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/criacao-itens">
+        <ProtectedRoute>
+          <CriacaoItens />
         </ProtectedRoute>
       </Route>
       
