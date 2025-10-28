@@ -50,7 +50,8 @@ export default function NovaEsp() {
 
   const createMutation = useMutation({
     mutationFn: async (data: NovaEspFormData) => {
-      return await apiRequest("POST", "/api/esp/nova", data);
+      const response = await apiRequest("POST", "/api/esp/nova", data);
+      return await response.json();
     },
     onSuccess: (data: any) => {
       toast({
@@ -61,7 +62,7 @@ export default function NovaEsp() {
       
       // Navigate to the new ESP editor
       if (data?.esp?.id) {
-        setLocation(`/esp-editor/${data.esp.id}`);
+        setLocation(`/esp/${data.esp.id}`);
       } else {
         setLocation("/dashboard");
       }
