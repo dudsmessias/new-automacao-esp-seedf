@@ -149,6 +149,76 @@ export default function EspEditor() {
     },
   });
 
+  // Fetch Constituintes catalog data (from itens_especificacao)
+  const { data: constituentesData } = useQuery({
+    queryKey: ["/api/catalog/constituintes"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/catalog/constituintes", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar constituintes");
+      return response.json();
+    },
+  });
+
+  // Fetch Acessórios catalog data (from itens_especificacao)
+  const { data: acessoriosData } = useQuery({
+    queryKey: ["/api/catalog/acessorios"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/catalog/acessorios", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar acessórios");
+      return response.json();
+    },
+  });
+
+  // Fetch Acabamentos catalog data (from itens_especificacao)
+  const { data: acabamentosData } = useQuery({
+    queryKey: ["/api/catalog/acabamentos"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/catalog/acabamentos", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar acabamentos");
+      return response.json();
+    },
+  });
+
+  // Fetch Protótipos Comerciais catalog data (from itens_especificacao)
+  const { data: prototiposData } = useQuery({
+    queryKey: ["/api/catalog/prototipos"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/catalog/prototipos", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar protótipos comerciais");
+      return response.json();
+    },
+  });
+
+  // Fetch Aplicações catalog data (from itens_especificacao)
+  const { data: aplicacoesData } = useQuery({
+    queryKey: ["/api/catalog/aplicacoes"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/catalog/aplicacoes", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar aplicações");
+      return response.json();
+    },
+  });
+
   // Form setup
   const form = useForm<EspFormData>({
     resolver: zodResolver(espFormSchema),
@@ -1002,8 +1072,10 @@ export default function EspEditor() {
                     <Select
                       defaultValue=""
                       onValueChange={(value) => {
-                        // TODO: Handle multi-select (store in array)
-                        console.log("Constituinte selected:", value);
+                        const currentIds = form.getValues("constituentesIds") || [];
+                        if (value && !currentIds.includes(value)) {
+                          form.setValue("constituentesIds", [...currentIds, value]);
+                        }
                       }}
                     >
                       <SelectTrigger
@@ -1015,7 +1087,15 @@ export default function EspEditor() {
                         <SelectValue placeholder="Escolha os constituintes" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="temp-loading">Carregando...</SelectItem>
+                        {constituentesData?.constituintes?.length > 0 ? (
+                          constituentesData.constituintes.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.nome}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-data" disabled>Nenhum item disponível</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1028,7 +1108,10 @@ export default function EspEditor() {
                     <Select
                       defaultValue=""
                       onValueChange={(value) => {
-                        console.log("Acessório selected:", value);
+                        const currentIds = form.getValues("acessoriosIds") || [];
+                        if (value && !currentIds.includes(value)) {
+                          form.setValue("acessoriosIds", [...currentIds, value]);
+                        }
                       }}
                     >
                       <SelectTrigger
@@ -1040,7 +1123,15 @@ export default function EspEditor() {
                         <SelectValue placeholder="Escolha os acessórios" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="temp-loading">Carregando...</SelectItem>
+                        {acessoriosData?.acessorios?.length > 0 ? (
+                          acessoriosData.acessorios.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.nome}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-data" disabled>Nenhum item disponível</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1053,7 +1144,10 @@ export default function EspEditor() {
                     <Select
                       defaultValue=""
                       onValueChange={(value) => {
-                        console.log("Acabamento selected:", value);
+                        const currentIds = form.getValues("acabamentosIds") || [];
+                        if (value && !currentIds.includes(value)) {
+                          form.setValue("acabamentosIds", [...currentIds, value]);
+                        }
                       }}
                     >
                       <SelectTrigger
@@ -1065,7 +1159,15 @@ export default function EspEditor() {
                         <SelectValue placeholder="Escolha o acabamento" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="temp-loading">Carregando...</SelectItem>
+                        {acabamentosData?.acabamentos?.length > 0 ? (
+                          acabamentosData.acabamentos.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.nome}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-data" disabled>Nenhum item disponível</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1078,7 +1180,10 @@ export default function EspEditor() {
                     <Select
                       defaultValue=""
                       onValueChange={(value) => {
-                        console.log("Protótipo comercial selected:", value);
+                        const currentIds = form.getValues("prototiposIds") || [];
+                        if (value && !currentIds.includes(value)) {
+                          form.setValue("prototiposIds", [...currentIds, value]);
+                        }
                       }}
                     >
                       <SelectTrigger
@@ -1090,7 +1195,15 @@ export default function EspEditor() {
                         <SelectValue placeholder="Escolha o protótipo comercial" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="temp-loading">Carregando...</SelectItem>
+                        {prototiposData?.prototipos?.length > 0 ? (
+                          prototiposData.prototipos.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.nome}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-data" disabled>Nenhum item disponível</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1103,7 +1216,10 @@ export default function EspEditor() {
                     <Select
                       defaultValue=""
                       onValueChange={(value) => {
-                        console.log("Aplicação selected:", value);
+                        const currentIds = form.getValues("aplicacoesIds") || [];
+                        if (value && !currentIds.includes(value)) {
+                          form.setValue("aplicacoesIds", [...currentIds, value]);
+                        }
                       }}
                     >
                       <SelectTrigger
@@ -1115,7 +1231,15 @@ export default function EspEditor() {
                         <SelectValue placeholder="Escolha a aplicação" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="temp-loading">Carregando...</SelectItem>
+                        {aplicacoesData?.aplicacoes?.length > 0 ? (
+                          aplicacoesData.aplicacoes.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.nome}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-data" disabled>Nenhum item disponível</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
