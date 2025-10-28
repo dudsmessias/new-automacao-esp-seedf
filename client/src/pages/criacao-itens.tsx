@@ -89,9 +89,13 @@ export default function CriacaoItens() {
       const novasSubcategorias = subcategoriasPorCategoria[categoriaAtual] || [];
       setSubcategorias(novasSubcategorias);
       
-      // Se a categoria mudou e tem subcategorias disponíveis, define a primeira
+      // Sempre define um valor para subcategoria ao mudar categoria
       if (novasSubcategorias.length > 0) {
+        // Se há subcategorias, usa a primeira da lista
         form.setValue("subcategoria", novasSubcategorias[0]);
+      } else {
+        // Se não há subcategorias, usa TEXTO_GERAL como padrão
+        form.setValue("subcategoria", SubcategoriaItem.TEXTO_GERAL);
       }
     }
   }, [categoriaAtual, form]);
