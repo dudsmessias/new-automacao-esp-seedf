@@ -43,6 +43,30 @@ The design adheres strictly to the official SEEDF visual identity, utilizing a t
 
 ## Recent Development Notes
 
+### Criação de Itens e Especificações Técnicas Page (October 28, 2025)
+-   **Feature:** Standalone page for creating and managing technical items that can be referenced in ESP specifications.
+-   **Data Model:** New `itens_especificacao` table with enum `CategoriaItem` (ELETRICA, HIDROSSANITARIO, ACABAMENTOS, ESTRUTURA, OUTROS)
+    -   Fields: id, titulo (required), categoria (required), codigoReferencia (optional - references other items), descricaoTecnico, especificacoes, caracteristicasTecnicas, normasReferencias, aplicacao, ativo (soft-delete)
+-   **Backend Implementation:**
+    -   Storage methods: createItemEspecificacao, getItensEspecificacao (with optional filters categoria/ativo), updateItemEspecificacao, deleteItemEspecificacao (soft-delete)
+    -   API Routes: GET/POST/PATCH/DELETE at /api/itens-especificacao with JWT authentication
+    -   Zod validation: insertItemEspecificacaoSchema for POST, partial schema (updateItemEspecificacaoSchema) for PATCH
+-   **Frontend Implementation:**
+    -   Route: /criacao-itens accessible via "+ Criação de Itens" button in dashboard
+    -   AuthHeader pattern: Official GDF branding with institutional blue/yellow colors
+    -   Two-column layout: Form fields on left (scrollable), action buttons on right (w-48, fixed)
+    -   Form fields with larger sizes: h-11 for inputs, rows=6 for textareas (avoiding mobile appearance)
+    -   Fields arranged in responsive grid: Título/Categoria (2 cols), Código/Identificação (full width), Descrição/Especificações (2 cols), Características/Normas (2 cols), Aplicação (full width)
+    -   Action buttons in vertical stack with black background (#000000): Salvar, Atualizar, Abrir PDF
+    -   React Hook Form + Zod using shared schema from @shared/schema.ts
+    -   TanStack Query for mutations with cache invalidation
+-   **Bug Fixes:**
+    -   Removed empty value SelectItem (Radix UI requirement - no empty string values allowed)
+    -   Fixed apiRequest parameter order: correct is apiRequest(method, url, data) not apiRequest(url, method, data)
+    -   Added Zod validation to PATCH route using partial schema to prevent data integrity issues
+-   **Testing:** E2E Playwright tests validate complete flow (login, navigation, form fill, multiple saves, toast notifications, form reset)
+-   **Architect Review:** Implementation approved after PATCH validation fix
+
 ### Serviços Incluídos Tab Implementation (October 2025)
 -   **Feature:** Catalog-based service selection system for managing included services in ESP specifications.
 -   **Implementation:**
