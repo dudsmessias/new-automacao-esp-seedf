@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { AuthHeader } from "@/components/AuthHeader";
 import {
   Form,
   FormControl,
@@ -45,6 +46,10 @@ export default function CriacaoItens() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Get user data
+  const userDataStr = localStorage.getItem("esp_auth_user");
+  const user = userDataStr ? JSON.parse(userDataStr) : null;
 
   // Fetch existing items for reference
   const { data: itensData } = useQuery<{ itens: any[] }>({
@@ -96,92 +101,101 @@ export default function CriacaoItens() {
     form.reset();
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("esp_auth_user");
+    localStorage.removeItem("esp_auth_token");
+    setLocation("/login");
+  };
+
   return (
-    <div className="flex h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-[#0361ad] px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation("/dashboard")}
-              className="text-white hover:bg-white/10"
-              data-testid="button-voltar"
-              aria-label="Voltar"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-white/90">GDF</span>
-              <h1 className="text-lg font-bold text-white">
-                Criação de Itens e Especificações Técnicas
-              </h1>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header padrão do sistema */}
+      <AuthHeader
+        userName={user?.nome || ""}
+        userRole={user?.perfil || ""}
+        onLogout={handleLogout}
+      />
+
+      {/* Breadcrumb / Navigation */}
+      <div className="border-b bg-card px-6 py-3">
+        <Button
+          variant="ghost"
+          onClick={() => setLocation("/dashboard")}
+          className="gap-2 text-sm"
+          data-testid="button-voltar"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
+      </div>
 
       {/* Main Content - Two Column Layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Content Area (Left Column) */}
-        <div className="flex flex-1 flex-col overflow-auto p-8">
-          <div className="mx-auto max-w-4xl">
+        {/* Content Area (Left Column) - Scrollable */}
+        <div className="flex flex-1 flex-col overflow-auto">
+          <div className="p-8">
+            <h1 className="text-2xl font-bold mb-6">
+              Criação de Itens e Especificações Técnicas
+            </h1>
+
             <Form {...form}>
               <form className="space-y-6">
-                {/* Título do Item */}
-                <FormField
-                  control={form.control}
-                  name="titulo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Título do Item *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Digite o nome do item a ser criado"
-                          data-testid="input-titulo"
-                          aria-label="Campo de texto. Digite o nome do item a ser criado."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Categoria */}
-                <FormField
-                  control={form.control}
-                  name="categoria"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoria *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                {/* Row 1: Título (full width) e Categoria */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="titulo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Título do Item *</FormLabel>
                         <FormControl>
-                          <SelectTrigger
-                            data-testid="select-categoria"
-                            aria-label="Campo de seleção. Escolha a categoria do item."
-                          >
-                            <SelectValue placeholder="Selecione a categoria" />
-                          </SelectTrigger>
+                          <Input
+                            {...field}
+                            placeholder="Digite o nome do item a ser criado"
+                            className="h-11"
+                            data-testid="input-titulo"
+                            aria-label="Campo de texto. Digite o nome do item a ser criado."
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {Object.entries(categoriaLabels).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                {/* Código/Identificação (Referência) */}
+                  <FormField
+                    control={form.control}
+                    name="categoria"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Categoria *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger
+                              className="h-11"
+                              data-testid="select-categoria"
+                              aria-label="Campo de seleção. Escolha a categoria do item."
+                            >
+                              <SelectValue placeholder="Selecione a categoria" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.entries(categoriaLabels).map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Row 2: Código/Identificação (full width) */}
                 <FormField
                   control={form.control}
                   name="codigoReferencia"
@@ -194,6 +208,7 @@ export default function CriacaoItens() {
                       >
                         <FormControl>
                           <SelectTrigger
+                            className="h-11"
                             data-testid="select-codigo-referencia"
                             aria-label="Campo de seleção. Escolha um item existente para referência."
                           >
@@ -219,91 +234,97 @@ export default function CriacaoItens() {
                   )}
                 />
 
-                {/* Descrição Técnico */}
-                <FormField
-                  control={form.control}
-                  name="descricaoTecnico"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição Técnico</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Informe a descrição do item"
-                          rows={4}
-                          data-testid="textarea-descricao"
-                          aria-label="Campo de texto. Informe a descrição do item."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Row 3: Descrição Técnico e Especificações */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="descricaoTecnico"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição Técnico</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Informe a descrição do item"
+                            rows={6}
+                            data-testid="textarea-descricao"
+                            aria-label="Campo de texto. Informe a descrição do item."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                {/* Especificações */}
-                <FormField
-                  control={form.control}
-                  name="especificacoes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Especificações</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Digite as especificações técnicas do item"
-                          rows={4}
-                          data-testid="textarea-especificacoes"
-                          aria-label="Campo de texto. Digite as especificações técnicas do item."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="especificacoes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Especificações</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Digite as especificações técnicas do item"
+                            rows={6}
+                            data-testid="textarea-especificacoes"
+                            aria-label="Campo de texto. Digite as especificações técnicas do item."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                {/* Características Técnicas */}
-                <FormField
-                  control={form.control}
-                  name="caracteristicasTecnicas"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Características Técnicas</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Informe as características técnicas do item"
-                          rows={4}
-                          data-testid="textarea-caracteristicas"
-                          aria-label="Campo de texto. Informe as características técnicas do item."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Row 4: Características Técnicas e Normas e Referências */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="caracteristicasTecnicas"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Características Técnicas</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Informe as características técnicas do item"
+                            rows={6}
+                            data-testid="textarea-caracteristicas"
+                            aria-label="Campo de texto. Informe as características técnicas do item."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                {/* Normas e Referências Aplicáveis */}
-                <FormField
-                  control={form.control}
-                  name="normasReferencias"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Normas e Referências Aplicáveis</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="Informe as normas e referências aplicáveis"
-                          rows={4}
-                          data-testid="textarea-normas"
-                          aria-label="Campo de texto. Informe as normas e referências aplicáveis."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="normasReferencias"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Normas e Referências Aplicáveis</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Informe as normas e referências aplicáveis"
+                            rows={6}
+                            data-testid="textarea-normas"
+                            aria-label="Campo de texto. Informe as normas e referências aplicáveis."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                {/* Aplicação */}
+                {/* Row 5: Aplicação (full width) */}
                 <FormField
                   control={form.control}
                   name="aplicacao"
@@ -313,8 +334,9 @@ export default function CriacaoItens() {
                       <FormControl>
                         <Textarea
                           {...field}
+                          value={field.value ?? ""}
                           placeholder="Descreva a aplicação do item"
-                          rows={4}
+                          rows={6}
                           data-testid="textarea-aplicacao"
                           aria-label="Campo de texto. Descreva a aplicação do item."
                         />
