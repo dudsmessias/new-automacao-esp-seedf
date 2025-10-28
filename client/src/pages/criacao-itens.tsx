@@ -72,7 +72,7 @@ export default function CriacaoItens() {
 
   const createMutation = useMutation({
     mutationFn: async (data: ItemFormData) => {
-      return await apiRequest("/api/itens-especificacao", "POST", data);
+      return await apiRequest("POST", "/api/itens-especificacao", data);
     },
     onSuccess: () => {
       toast({
