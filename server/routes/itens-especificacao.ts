@@ -11,12 +11,11 @@ const router = Router();
 router.get("/", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const categoria = req.query.categoria as CategoriaItem | undefined;
-    const ativo = req.query.ativo === "false" ? false : true;
+    const ativo = req.query.ativo === "true" ? true : req.query.ativo === "false" ? false : undefined;
     
-    const filters = {
-      categoria,
-      ativo,
-    };
+    const filters: { categoria?: CategoriaItem; ativo?: boolean } = {};
+    if (categoria) filters.categoria = categoria;
+    if (ativo !== undefined) filters.ativo = ativo;
     
     const itens = await storage.getItensEspecificacao(filters);
     res.json({ itens });
