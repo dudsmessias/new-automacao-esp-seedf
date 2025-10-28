@@ -219,6 +219,20 @@ export default function EspEditor() {
     },
   });
 
+  // Fetch ALL itens_especificacao for Fichas de Referência tab
+  const { data: todosItensData } = useQuery({
+    queryKey: ["/api/itens-especificacao"],
+    queryFn: async () => {
+      const token = localStorage.getItem("esp_auth_token");
+      const response = await fetch("/api/itens-especificacao?ativo=true", {
+        credentials: "include",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error("Erro ao carregar itens de especificação");
+      return response.json();
+    },
+  });
+
   // Form setup
   const form = useForm<EspFormData>({
     resolver: zodResolver(espFormSchema),
@@ -1321,7 +1335,15 @@ export default function EspEditor() {
                               <SelectValue placeholder={`Escolha o constituinte ${index + 1}`} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="temp-loading">Carregando...</SelectItem>
+                              {constituentesData?.constituintes?.length > 0 ? (
+                                constituentesData.constituintes.map((item: any) => (
+                                  <SelectItem key={item.id} value={item.id}>
+                                    {item.nome}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no-data" disabled>Nenhum item disponível</SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
@@ -1440,7 +1462,15 @@ export default function EspEditor() {
                               <SelectValue placeholder={`Escolha o item ${index + 1}`} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="temp-loading">Carregando...</SelectItem>
+                              {todosItensData?.itens?.length > 0 ? (
+                                todosItensData.itens.map((item: any) => (
+                                  <SelectItem key={item.id} value={item.id}>
+                                    {item.titulo} ({item.categoria})
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no-data" disabled>Nenhum item disponível</SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
