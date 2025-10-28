@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -25,50 +25,76 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, RefreshCw, FileText } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { insertItemEspecificacaoSchema } from "@shared/schema";
+import { insertItemEspecificacaoSchema, CategoriaItem, SubcategoriaItem } from "@shared/schema";
+import { useState, useEffect } from "react";
 
 // Extend shared schema with validation
 const itemFormSchema = insertItemEspecificacaoSchema.extend({
   titulo: z.string().min(1, "Título é obrigatório"),
+  categoria: z.string().min(1, "Categoria é obrigatória"),
+  subcategoria: z.string().min(1, "Subcategoria é obrigatória"),
+  descricao: z.string().min(1, "Descrição é obrigatória"),
 });
 
 type ItemFormData = z.infer<typeof itemFormSchema>;
 
-const categoriaLabels: Record<string, string> = {
-  ELETRICA: "Elétrica",
-  HIDROSSANITARIO: "Hidrossanitário",
-  ACABAMENTOS: "Acabamentos",
-  ESTRUTURA: "Estrutura",
-  OUTROS: "Outros",
+// Mapeamento de subcategorias por categoria
+const subcategoriasPorCategoria: Record<string, SubcategoriaItem[]> = {
+  [CategoriaItem.DESCRICAO]: [
+    SubcategoriaItem.ACESSORIOS,
+    SubcategoriaItem.ACABAMENTOS,
+    SubcategoriaItem.CONSTITUINTES,
+    SubcategoriaItem.PROTOTIPO_COMERCIAL,
+    SubcategoriaItem.TEXTO_GERAL,
+  ],
+  [CategoriaItem.FICHA_DE_REFERENCIA]: [
+    SubcategoriaItem.CATALOGO_SERVICOS,
+    SubcategoriaItem.TEXTO_GERAL,
+  ],
+  // As demais categorias não têm subcategorias definidas ainda
+  [CategoriaItem.APLICACAO]: [],
+  [CategoriaItem.EXECUCAO]: [],
+  [CategoriaItem.RECEBIMENTO]: [],
+  [CategoriaItem.SERVICOS_INCLUIDOS]: [],
+  [CategoriaItem.CRITERIOS_MEDICAO]: [],
+  [CategoriaItem.LEGISLACAO]: [],
+  [CategoriaItem.REFERENCIA]: [],
 };
 
 export default function CriacaoItens() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [subcategorias, setSubcategorias] = useState<SubcategoriaItem[]>([]);
 
   // Get user data
   const userDataStr = localStorage.getItem("esp_auth_user");
   const user = userDataStr ? JSON.parse(userDataStr) : null;
 
-  // Fetch existing items for reference
-  const { data: itensData } = useQuery<{ itens: any[] }>({
-    queryKey: ["/api/itens-especificacao"],
-  });
-
   const form = useForm<ItemFormData>({
     resolver: zodResolver(itemFormSchema),
     defaultValues: {
       titulo: "",
-      categoria: "OUTROS",
-      codigoReferencia: undefined,
-      descricaoTecnico: undefined,
-      especificacoes: undefined,
-      caracteristicasTecnicas: undefined,
-      normasReferencias: undefined,
-      aplicacao: undefined,
+      categoria: CategoriaItem.DESCRICAO,
+      subcategoria: SubcategoriaItem.TEXTO_GERAL,
+      descricao: "",
     },
   });
+
+  // Watch categoria changes to update subcategorias
+  const categoriaAtual = form.watch("categoria");
+  
+  useEffect(() => {
+    if (categoriaAtual) {
+      const novasSubcategorias = subcategoriasPorCategoria[categoriaAtual] || [];
+      setSubcategorias(novasSubcategorias);
+      
+      // Se a categoria mudou e tem subcategorias disponíveis, define a primeira
+      if (novasSubcategorias.length > 0) {
+        form.setValue("subcategoria", novasSubcategorias[0]);
+      }
+    }
+  }, [categoriaAtual, form]);
 
   const createMutation = useMutation({
     mutationFn: async (data: ItemFormData) => {
@@ -80,7 +106,12 @@ export default function CriacaoItens() {
         description: "Item técnico criado com sucesso!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/itens-especificacao"] });
-      form.reset();
+      form.reset({
+        titulo: "",
+        categoria: CategoriaItem.DESCRICAO,
+        subcategoria: SubcategoriaItem.TEXTO_GERAL,
+        descricao: "",
+      });
     },
     onError: () => {
       toast({
@@ -98,7 +129,12 @@ export default function CriacaoItens() {
   };
 
   const handleRefresh = () => {
-    form.reset();
+    form.reset({
+      titulo: "",
+      categoria: CategoriaItem.DESCRICAO,
+      subcategoria: SubcategoriaItem.TEXTO_GERAL,
+      descricao: "",
+    });
   };
 
   const handleLogout = () => {
@@ -139,69 +175,35 @@ export default function CriacaoItens() {
             </h1>
 
             <Form {...form}>
-              <form className="space-y-6">
-                {/* Row 1: Título (full width) e Categoria */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="titulo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Título do Item *</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Digite o nome do item a ser criado"
-                            className="h-11"
-                            data-testid="input-titulo"
-                            aria-label="Campo de texto. Digite o nome do item a ser criado."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="categoria"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoria *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger
-                              className="h-11"
-                              data-testid="select-categoria"
-                              aria-label="Campo de seleção. Escolha a categoria do item."
-                            >
-                              <SelectValue placeholder="Selecione a categoria" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.entries(categoriaLabels).map(([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Row 2: Código/Identificação (full width) */}
+              <form className="space-y-6 max-w-3xl">
+                {/* Campo 1: Título do Item */}
                 <FormField
                   control={form.control}
-                  name="codigoReferencia"
+                  name="titulo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Código/Identificação (Referência)</FormLabel>
+                      <FormLabel>Título do Item *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Digite o nome do item a ser criado"
+                          className="h-11"
+                          data-testid="input-titulo"
+                          aria-label="Campo de texto. Digite o nome do item a ser criado."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Campo 2: Categoria */}
+                <FormField
+                  control={form.control}
+                  name="categoria"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
@@ -209,24 +211,18 @@ export default function CriacaoItens() {
                         <FormControl>
                           <SelectTrigger
                             className="h-11"
-                            data-testid="select-codigo-referencia"
-                            aria-label="Campo de seleção. Escolha um item existente para referência."
+                            data-testid="select-categoria"
+                            aria-label="Campo de seleção. Escolha a categoria do item."
                           >
-                            <SelectValue placeholder="Selecione um item existente" />
+                            <SelectValue placeholder="Selecione a categoria" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {itensData?.itens && itensData.itens.length === 0 ? (
-                            <SelectItem value="none" disabled>
-                              Nenhum item disponível
+                          {Object.values(CategoriaItem).map((categoria) => (
+                            <SelectItem key={categoria} value={categoria}>
+                              {categoria}
                             </SelectItem>
-                          ) : (
-                            itensData?.itens?.map((item) => (
-                              <SelectItem key={item.id} value={item.id}>
-                                {item.titulo} ({categoriaLabels[item.categoria]})
-                              </SelectItem>
-                            ))
-                          )}
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -234,111 +230,61 @@ export default function CriacaoItens() {
                   )}
                 />
 
-                {/* Row 3: Descrição Técnico e Especificações */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="descricaoTecnico"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Descrição Técnico</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="Informe a descrição do item"
-                            rows={6}
-                            data-testid="textarea-descricao"
-                            aria-label="Campo de texto. Informe a descrição do item."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="especificacoes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Especificações</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="Digite as especificações técnicas do item"
-                            rows={6}
-                            data-testid="textarea-especificacoes"
-                            aria-label="Campo de texto. Digite as especificações técnicas do item."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Row 4: Características Técnicas e Normas e Referências */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="caracteristicasTecnicas"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Características Técnicas</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="Informe as características técnicas do item"
-                            rows={6}
-                            data-testid="textarea-caracteristicas"
-                            aria-label="Campo de texto. Informe as características técnicas do item."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="normasReferencias"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Normas e Referências Aplicáveis</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="Informe as normas e referências aplicáveis"
-                            rows={6}
-                            data-testid="textarea-normas"
-                            aria-label="Campo de texto. Informe as normas e referências aplicáveis."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Row 5: Aplicação (full width) */}
+                {/* Campo 3: Subcategorias (dependente da categoria) */}
                 <FormField
                   control={form.control}
-                  name="aplicacao"
+                  name="subcategoria"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Aplicação</FormLabel>
+                      <FormLabel>Subcategorias *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={subcategorias.length === 0}
+                      >
+                        <FormControl>
+                          <SelectTrigger
+                            className="h-11"
+                            data-testid="select-subcategoria"
+                            aria-label="Campo de seleção. Escolha um item existente para referência."
+                          >
+                            <SelectValue 
+                              placeholder={
+                                subcategorias.length === 0 
+                                  ? "Nenhuma subcategoria disponível para esta categoria" 
+                                  : "Selecione a subcategoria"
+                              } 
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {subcategorias.map((subcategoria) => (
+                            <SelectItem key={subcategoria} value={subcategoria}>
+                              {subcategoria}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Campo 4: Descrição (multilinha) */}
+                <FormField
+                  control={form.control}
+                  name="descricao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descrição *</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          value={field.value ?? ""}
-                          placeholder="Descreva a aplicação do item"
+                          placeholder="Informe a descrição do item"
                           rows={6}
-                          data-testid="textarea-aplicacao"
-                          aria-label="Campo de texto. Descreva a aplicação do item."
+                          className="resize-y"
+                          data-testid="textarea-descricao"
+                          aria-label="Campo de texto. Informe a descrição do item."
                         />
                       </FormControl>
                       <FormMessage />
