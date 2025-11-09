@@ -11,7 +11,7 @@ Sistema de automação do Caderno de Especificações (ESP) da Secretaria de Est
 ## 🚀 Como Executar
 
 ```bash
-# Instalar dependências (já instaladas no Replit)
+# Instalar dependências
 npm install
 
 # Executar aplicação (frontend + backend)
@@ -121,7 +121,7 @@ A aplicação estará disponível em:
 
 ## 📖 Documentação Completa
 
-Consulte `replit.md` para documentação detalhada do projeto.
+Consulte `estruturação.md` para documentação detalhada do projeto.
 
 ## ✅ Status do Projeto
 
